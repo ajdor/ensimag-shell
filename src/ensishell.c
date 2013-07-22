@@ -7,9 +7,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "variante.h"
 #include "readcmd.h"
 
-#define VARIANTE "Remplacer cette chaîne par le nom de la variante que vous devez implanter"
+#ifndef VARIANTE
+#error "Variante non défini !!"
+#endif
 
 int main()
 {
