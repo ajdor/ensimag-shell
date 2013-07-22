@@ -1,0 +1,9 @@
+#ifndef VARIANTE_H
+#define VARIANTE_H
+
+#define LOGINS login;login1;login2
+#define SUJETSHA 227ba1c3ab88803a6b7e8f3fc8ff7c244a456c74169fdc1bfd36ecd2dc893f70150d4599f911110298d7480a5068c056391ddf236487560b84343477121e8181
+#define SUJET 2
+
+
+#endif
