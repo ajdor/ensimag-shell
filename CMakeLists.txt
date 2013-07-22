@@ -13,7 +13,7 @@ set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -Werror")
 #########
 # Vous devez editer la ligne suivante pour y mettre vos logins
 #########
-set(VARIANTE_LOGINS login1 login2 login)
+set(VARIANTE_LOGINS login1 login2 login3)
 
 ###
 
