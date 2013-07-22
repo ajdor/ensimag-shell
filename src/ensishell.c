@@ -15,9 +15,9 @@
 #error "Variante non défini !!"
 #endif
 
-int main()
-{
-	printf("%s\n", VARIANTE);
+int main() {
+        printf("Variante %d: %s\n", VARIANTE, VARIANTE_STRING);
+
 	while (1) {
 		struct cmdline *l;
 		int i, j;
