@@ -1,0 +1,120 @@
+#!/usr/bin/expect
+
+# Test software for shell
+# Copyright (C) 2011 Gregory Mounie
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at
+# your option) any later version.
+ 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+ 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# USAGE:
+# ./testshell.expect ./the_tested_shell
+# or
+# expect ./testshell.expect ./the_tested_shell
+
+# WARNING: Some tests, eg. tests using "time", may failed if the
+# computer is overloaded or very very slow. Indeed, the general
+# timeout could also be shorter than necessary. Nevertheless, IMHO, a
+# 2 second timeout should be enougth in most cases.
+set timeout 2
+
+proc abort { num } {
+    puts "\n !!!!! TEST $num FAILED !!!!!\n"
+    exit -1
+}
+
+proc ok { num } {
+    puts "\n ***** TEST $num ok\n"
+}
+
+proc t0 {} {
+    expect {
+        -re {^[^[:digit:]>]*>$} { ok 0.0 }
+        default { puts "\nERREUR: les tests ont besoin que votre prompt :"
+                  puts "  - ne contienne pas de chiffres"
+                  puts "  - ne contienne pas de caractere '>' avant la fin"
+                  puts "  - et termine par le caractere '>'"
+                  abort 0.0 }
+    }
+    send "pwd\r"
+    expect "/*>" { ok 0 } default { abort 0 }
+}
+
+proc t1 {} {
+    send "seq 0 3\r"
+    expect "0*1*2*3*>" { ok 1 } default { abort 1 }
+}
+
+proc t2 {} {
+    send "printf 'toto%d' 10\r"
+    expect "toto10*>" { ok 2 } default { abort 2 }
+}
+
+# test 3
+
+proc t3 {} {
+    send "ls > totoExpect.txt\r"
+    send "ls totoExpect.txt\r"
+    expect "totoExpect.txt*>" { ok 3.1 } default { abort 3.1 }
+    send "ls -l totoExpect.txt\r"
+    expect -re "-r.*>" { ok 3.2 } default { abort 3.2 }
+    send "wc -l totoExpect.txt\r"
+    expect -re "(0|1|2|3|4|5|6|7|8|9)+.*>" { ok 3.3; } default { abort 3.3 }
+    send "wc -l < totoExpect.txt\r"
+    expect -re "(0|1|2|3|4|5|6|7|8|9)+.*>" { ok 3.4; } default { abort 3.4 }
+    system "rm totoExpect.txt"
+}
+
+proc t4 {} {
+    send "ls | wc -l\r"
+    expect -re "(0|1|2|3|4|5|6|7|8|9)+.*>" { ok 4; } default { abort 4 }
+}
+
+# test 5
+proc t5 {} {
+    send "ls > totoExpect.txt\r"
+    send "cat < totoExpect.txt | wc -l > titiExpect.txt\r"
+    send "cat titiExpect.txt\r"
+    expect -re "(0|1|2|3|4|5|6|7|8|9)+.*>" { ok 5; } default { abort 5 }
+    system "rm totoExpect.txt titiExpect.txt"
+}
+
+proc t6 {} {
+    send "time -p sleep 3 | echo toto\r"
+    expect -timeout 6 "toto*real 3*>" { ok 6 } default { abort 6 }
+}
+
+proc t7 {} {
+    send "sleep 10 &\r"
+    expect "*>" { ok 7.1 } default { abort 7.1 }
+    send "liste_ps\r"
+    expect "sleep*>" { ok 7.2 } default { abort 7.2 }
+}
+
+spawn -noecho $argv
+
+send_user "Choose tests \[auto / 0 1 2 3 4 5 6 7\]: \n"
+expect_user {
+    -timeout 30 "auto\n" {
+	puts "AUTO:\n";
+	foreach t {0 1 2 3 4 5 6 7} { eval "t$t;" } 
+    }
+    -timeout 30 -re "(\[0123456789 \]+)\n" {
+	puts "TEST\n";
+	set l [split $expect_out(1,string)]
+	foreach i $l { eval "t$i" } 
+    }
+    default { puts "Timeout ! Bye !\n"; exit -1 } 
+} 
+
+puts "\nTests finis. Pensez à vérifier vos accès mémoires avec valgrind\n"
+exit 0;
