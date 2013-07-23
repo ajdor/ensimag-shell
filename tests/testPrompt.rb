@@ -1,0 +1,49 @@
+#!/usr/bin/ruby
+# -*- coding: utf-8 -*-
+
+# Copyright (C) 2013 Gregory Mounie
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at
+# your option) any later version.
+ 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+ 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+require "test/unit"
+require "expect"
+require "pty"
+
+PROMPT=/^ensishell>/
+DELAI=1
+
+class TestPrompt < Test::Unit::TestCase
+
+  def setup
+    @pty_read, @pty_write, @pty_pid = PTY.spawn("./ensishell")
+  end
+
+  def teardown
+    # ne rien faire
+  end
+
+  def test_ensiprompt
+    a = @pty_read.expect(PROMPT, DELAI)
+    assert_not_equal(nil, a, "Le prompt attendu est 'ensishell>' !")
+  end
+
+  def test_varianteNumber
+    a = @pty_read.expect(/^Variante (\d+): (.*)\r/, DELAI)
+    assert_not_equal(nil, a, "Pas d'affichage donnant la variante")
+    # puts "\nLa variante qui doit être implantée: #{a[1]} , #{a[2]}"
+    test_ensiprompt()
+    a = @pty_read.expect(/.+/, DELAI)
+    assert_equal(nil, a, "Les printf intempestifs perturbent les tests")
+  end
+
+end
