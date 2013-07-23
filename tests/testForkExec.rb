@@ -19,15 +19,13 @@ require "test/unit"
 require "expect"
 require "pty"
 
-if not defined? PROMPT then
-    PROMPT=/^ensishell>/
-    DELAI=1
-end
+require "../tests/testConstantes"
 
-class TestForkExec < Test::Unit::TestCase
+class Test1ForkExec < Test::Unit::TestCase
+  test_order=:defined
 
   def setup
-    @pty_read, @pty_write, @pty_pid = PTY.spawn("./ensishell")
+    @pty_read, @pty_write, @pty_pid = PTY.spawn(COMMANDESHELL)
   end
 
   def teardown
@@ -36,8 +34,18 @@ class TestForkExec < Test::Unit::TestCase
 
   def test_seq
     @pty_write.puts("seq 0 3")
-    a = @pty_read.expect(/0\r\n1\n\n2\r\n3\r\n/m, DELAI)
-    assert_not_equal(nil, a, "Sortie incohérente pour 'seq 0 3'")
+    a = @pty_read.expect(/0\r\n1\r\n2\r\n3/m, DELAI)
+    assert_not_nil(a, "Sortie incohérente pour 'seq 0 3'")
   end
 
+  def test_printf
+    @pty_write.puts("printf 'toto%dtoto' 10")
+    a = @pty_read.expect(/toto10toto/, DELAI)
+    assert_not_nil(a, "Sortie incohérente pour 'seq 0 3'")
+  end
+
+  def test_all
+    test_seq
+    test_printf
+  end
 end

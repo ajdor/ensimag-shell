@@ -19,13 +19,13 @@ require "test/unit"
 require "expect"
 require "pty"
 
-PROMPT=/^ensishell>/
-DELAI=1
+require "../tests/testConstantes"
 
-class TestPrompt < Test::Unit::TestCase
+class Test0Prompt < Test::Unit::TestCase
+  test_order=:defined
 
   def setup
-    @pty_read, @pty_write, @pty_pid = PTY.spawn("./ensishell")
+    @pty_read, @pty_write, @pty_pid = PTY.spawn(COMMANDESHELL)
   end
 
   def teardown

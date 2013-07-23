@@ -17,4 +17,5 @@
 require 'test/unit'
 require '../tests/testPrompt'
 require '../tests/testForkExec'
-
+require '../tests/testInOut'
+require '../tests/testJobs'
