@@ -49,5 +49,5 @@ target_link_libraries(ensishell readline history)
 ##
 # Programme de test
 ##
-add_test(UnitShellTests ../tests/testshell.expect ./ensishell)
+add_test(UnitShellTests ../tests/allShellTests.rb)
 
