@@ -19,8 +19,8 @@ class Test3Jobs < Test::Unit::TestCase
 
   def test_inout
     @pty_write.puts("sleep 10 &")
-    @pty_write.puts("liste_ps")
+    @pty_write.puts("jobs")
     a = @pty_read.expect(/sleep/, DELAI)
-    assert_not_nil(a, "liste_ps n'affiche pas le nom de la commande sleep")
+    assert_not_nil(a, "jobs n'affiche pas le nom de la commande sleep")
   end
 end
