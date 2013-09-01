@@ -16,13 +16,12 @@ set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -Werror")
 set(VARIANTE_LOGINS login1 login2 login3)
 
 ###
-
 list(SORT VARIANTE_LOGINS)
-execute_process(COMMAND echo ${VARIANTE_LOGINS} COMMAND sha512sum COMMAND cut -f 1 -d " " OUTPUT_VARIABLE VARIANTE_SHA)
-if (${VARIANTE_SHA} MATCHES "dd31ac6f934c6263b07338d7f33e212565d6b99694ce520251d838bdc9c537f9de63e79ba5ecd66a11a0e7b0c980c3631ee4c34bca4c415f32fce0c0a243ada2")
+execute_process(COMMAND printf "${VARIANTE_LOGINS}" COMMAND sha512sum COMMAND cut -f 1 -d " " OUTPUT_VARIABLE VARIANTE_SHA)
+if (${VARIANTE_SHA} MATCHES "740444f437149a43d9f494c09ceec14f974517a6886da494619e4ed1c6530518b36f4b36615346ee845743ab072be382b3d4308b8a864b3bdd17406c69fc9a43")
   message(FATAL_ERROR "** ERREUR **: Vous devez modifier CMakeLists.txt pour y mettre vos logins")
 endif()
-execute_process(COMMAND echo ${VARIANTE_SHA} COMMAND tr "a-f" "A-F" COMMAND xargs printf "16 i 10 o %s C %% p" COMMAND dc OUTPUT_VARIABLE VARIANTE_SUJET)
+execute_process(COMMAND echo ${VARIANTE_SHA} COMMAND tr "a-f" "A-F" COMMAND xargs printf "10 o 16 i %s C %% p" COMMAND dc OUTPUT_VARIABLE VARIANTE_SUJET)
 message("Votre variante sera la variante numéro " ${VARIANTE_SUJET})
 configure_file (
   src/variante.h.in
