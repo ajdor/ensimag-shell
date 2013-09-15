@@ -48,7 +48,8 @@ target_link_libraries(ensishell readline history)
 ##
 # Programme de test
 ##
-add_test(UnitShellTests ../tests/allShellTests.rb)
+add_test(UnitShellTestsRuby ../tests/Ruby/allShellTests.rb)
+add_test(UnitShellTestsPerl ../tests/Perl/allShellTests.pl)
 
 ##
 # Construction de l'archive

@@ -1,0 +1,3 @@
+
+Rationale: CentOS 6.4 pexpect module of stdlib of ruby seems
+buggy. Perl equivalent tests are provided as backup.
