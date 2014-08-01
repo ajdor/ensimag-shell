@@ -2,7 +2,6 @@
 #define VARIANTE_H
 
 #define LOGINS @VARIANTE_LOGINS@
-#define SUJETSHA @VARIANTE_SHA@
 #define SUJET @VARIANTE_SUJET@
 
 
