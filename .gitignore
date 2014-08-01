@@ -18,3 +18,6 @@
 
 # emacs backup
 *~
+
+# ignore build directory
+build/
