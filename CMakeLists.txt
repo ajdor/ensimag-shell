@@ -11,7 +11,7 @@ set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -Werror -std=gnu99")
 #########
 # Gestion des variantes
 #########
-# Vous devez editer la ligne suivante pour y mettre vos logins
+# Vous devez editer les lignes suivantes pour y mettre vos logins
 # et le numéro de la variante que vous avez choisi
 #########
 set(VARIANTE_LOGINS login1 login2 login3)
