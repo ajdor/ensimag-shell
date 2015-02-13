@@ -41,7 +41,7 @@ find_library(READLINE_LIBRARY NAMES readline libreadline history libhistory)
 #########
 
 ##
-# Si vous utilisé plusieurs fichiers, en plus de ensishell.c, pour votre
+# Si vous utilisez plusieurs fichiers, en plus de ensishell.c, pour votre
 # shell il faut les ajouter ici
 ##
 add_executable(ensishell src/readcmd.c src/ensishell.c)
