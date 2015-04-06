@@ -15,8 +15,6 @@
 #include "readcmd.h"
 
 #ifdef USE_GNU_READLINE
-#include <readline/readline.h>
-#include <readline/history.h>
 #endif
 
 static void memory_error(void)
@@ -44,7 +42,7 @@ static void *xrealloc(void *ptr, size_t size)
 
 #ifndef USE_GNU_READLINE
 /* Read a line from standard input and put it in a char[] */
-static char *readline(char *prompt)
+char *readline(char *prompt)
 {
 	size_t buf_len = 16;
 	char *buf = xmalloc(buf_len * sizeof(char));
@@ -217,11 +215,10 @@ static void freecmd(struct cmdline *s)
 }
 
 
-struct cmdline *readcmd(char *prompt)
+struct cmdline *parsecmd(char *line)
 {
 	static struct cmdline *static_cmdline = 0;
 	struct cmdline *s = static_cmdline;
-	char *line;
 	char **words;
 	int i;
 	char *w;
@@ -229,7 +226,6 @@ struct cmdline *readcmd(char *prompt)
 	char ***seq;
 	size_t cmd_len, seq_len;
 
-	line = readline(prompt);
 	if (line == NULL) {
 		if (s) {
 			freecmd(s);
@@ -237,10 +233,6 @@ struct cmdline *readcmd(char *prompt)
 		}
 		return static_cmdline = 0;
 	}
-#ifdef USE_GNU_READLINE
-	else 
-	  add_history(line);
-#endif
 
 	cmd = xmalloc(sizeof(char *));
 	cmd[0] = 0;

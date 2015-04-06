@@ -5,8 +5,18 @@ endif(COMMAND cmake_policy)
 
 project(Ensishell)
 enable_testing()
+
+#######
+# Detect Guile en utilisant pkg-config
+# Si guile est desactivé dans ensishell.c vous pouvez commenter les lignes
+#####
+execute_process(COMMAND pkg-config --cflags guile-2.0 OUTPUT_VARIABLE GUILE_PKG_CFLAGS)
+string(STRIP ${GUILE_PKG_CFLAGS} GUILE_CFLAGS)
+
+# Debug build
+
 set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -Werror -std=gnu99")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${GUILE_CFLAGS} -Wall -Werror -std=gnu99")
 
 #########
 # Gestion des variantes
@@ -30,12 +40,6 @@ configure_file (
   ${CMAKE_SOURCE_DIR}/src/variante.h
 )
 
-#####
-# Détection de la bibliothèque Readline
-#####
-find_library(READLINE_LIBRARY NAMES readline libreadline history libhistory) 
-
-
 #########
 # Fin de gestion des variantes
 #########
@@ -45,7 +49,7 @@ find_library(READLINE_LIBRARY NAMES readline libreadline history libhistory)
 # shell il faut les ajouter ici
 ##
 add_executable(ensishell src/readcmd.c src/ensishell.c)
-target_link_libraries(ensishell readline history)
+target_link_libraries(ensishell readline history guile-2.0 gc)
 
 ##
 # Programme de test

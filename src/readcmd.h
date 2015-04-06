@@ -12,16 +12,28 @@
 #ifndef __READCMD_H
 #define __READCMD_H
 
+
+
 /* If GNU Readline is not available, comment the  next line to use readcmd
    internal simple line reader */
 #define USE_GNU_READLINE
 
 /* Read a command line from input stream. Return null when input closed.
 Display an error and call exit() in case of memory exhaustion. */
-struct cmdline *readcmd(char *prompt);
+struct cmdline *parsecmd(char *line);
 
 
-/* Structure returned by readcmd() */
+#ifndef USE_GNU_READLINE
+/* Read a line from standard input and put it in a char[] */
+char *readline(char *prompt)
+
+#else
+#include <readline/readline.h>
+#include <readline/history.h>
+
+#endif
+
+/* Structure returned by parsecmd() */
 struct cmdline {
 	char *err;	/* If not null, it is an error message that should be
 			   displayed. The other fields are null. */
