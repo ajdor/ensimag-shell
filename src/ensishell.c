@@ -27,7 +27,7 @@
 int executer(char *line)
 {
 	/* change this code to execute the command line */
-	/* identical to standard execution */
+	/* identically to the standard execution out of scheme */
 	printf("Not implemented: can not execute %s", line);
 
 	return 0;
