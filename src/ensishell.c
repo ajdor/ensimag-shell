@@ -26,8 +26,11 @@
 
 int executer(char *line)
 {
-	/* change this code to execute the command line */
-	/* identically to the standard execution out of scheme */
+	/* Insert your code to execute the command line
+	 * identically to the standard execution scheme:
+	 * parsecmd, then fork+execvp, for a single command.
+	 * pipe and i/o redirection are not required.
+	 */
 	printf("Not implemented: can not execute %s", line);
 
 	return 0;
