@@ -15,11 +15,11 @@
 #error "Variante non défini !!"
 #endif
 
+/* Guile (1.8 and 2.0) is auto-detected by cmake */
 /* To disable Scheme interpreter (Guile support), comment the
- * following line.  You may also have to comment related pkg-config
+ * following lines.  You may also have to comment related pkg-config
  * lines in CMakeLists.txt.
  */
-#define USE_GUILE
 
 #ifdef USE_GUILE
 #include <libguile.h>

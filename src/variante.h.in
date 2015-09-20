@@ -3,7 +3,7 @@
 
 #define LOGINS @VARIANTE_LOGINS@
 #define SUJET @VARIANTE_SUJET@
-
+#define USE_GUILE @USE_GUILE@
 
 #define VARIANTE SUJET
 

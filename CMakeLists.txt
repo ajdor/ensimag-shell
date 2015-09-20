@@ -16,14 +16,18 @@ execute_process(COMMAND pkg-config --cflags guile-2.0 OUTPUT_VARIABLE GUILE_PKG_
 execute_process(COMMAND pkg-config --libs guile-2.0 OUTPUT_VARIABLE GUILE_PKG_LDFLAGS)
 
 # Guile 1.8 if guile 2.0 is not available
-if (GUILE_LDFLAGS EQUAL "")
-execute_process(COMMAND pkg-config --cflags guile-1.8 OUTPUT_VARIABLE GUILE_PKG_CFLAGS)
-execute_process(COMMAND pkg-config --libs guile-2.0 OUTPUT_VARIABLE GUILE_PKG_LDFLAGS)
+if (GUILE_LDFLAGS EQUAL "\n")
+  execute_process(COMMAND pkg-config --cflags guile-1.8 OUTPUT_VARIABLE GUILE_PKG_CFLAGS)
+  execute_process(COMMAND pkg-config --libs guile-1.8 OUTPUT_VARIABLE GUILE_PKG_LDFLAGS)
 
 endif()
 
-string(STRIP ${GUILE_PKG_CFLAGS} GUILE_CFLAGS)
-string(STRIP ${GUILE_PKG_LDFLAGS} GUILE_LDFLAGS)
+# aucun Guile n'a été trouvé
+if (GUILE_LDFLAGS EQUAL "\n")
+  set(USE_GUILE 1)
+  string(STRIP ${GUILE_PKG_CFLAGS} GUILE_CFLAGS)
+  string(STRIP ${GUILE_PKG_LDFLAGS} GUILE_LDFLAGS)
+endif()
 
 # Debug build
 
