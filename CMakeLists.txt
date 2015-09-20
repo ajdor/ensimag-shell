@@ -23,7 +23,7 @@ if (GUILE_LDFLAGS EQUAL "\n")
 endif()
 
 # aucun Guile n'a été trouvé
-if (GUILE_LDFLAGS EQUAL "\n")
+if (NOT GUILE_LDFLAGS EQUAL "\n")
   set(USE_GUILE 1)
   string(STRIP ${GUILE_PKG_CFLAGS} GUILE_CFLAGS)
   string(STRIP ${GUILE_PKG_LDFLAGS} GUILE_LDFLAGS)

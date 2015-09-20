@@ -21,7 +21,7 @@
  * lines in CMakeLists.txt.
  */
 
-#ifdef USE_GUILE
+#if USE_GUILE == 1
 #include <libguile.h>
 
 int executer(char *line)
