@@ -10,8 +10,20 @@ enable_testing()
 # Detect Guile en utilisant pkg-config
 # Si guile est desactivé dans ensishell.c vous pouvez commenter les lignes
 #####
+# Guile 2.0 by default
+
 execute_process(COMMAND pkg-config --cflags guile-2.0 OUTPUT_VARIABLE GUILE_PKG_CFLAGS)
+execute_process(COMMAND pkg-config --libs guile-2.0 OUTPUT_VARIABLE GUILE_PKG_LDFLAGS)
+
+# Guile 1.8 if guile 2.0 is not available
+if (GUILE_LDFLAGS EQUAL "")
+execute_process(COMMAND pkg-config --cflags guile-1.8 OUTPUT_VARIABLE GUILE_PKG_CFLAGS)
+execute_process(COMMAND pkg-config --libs guile-2.0 OUTPUT_VARIABLE GUILE_PKG_LDFLAGS)
+
+endif()
+
 string(STRIP ${GUILE_PKG_CFLAGS} GUILE_CFLAGS)
+string(STRIP ${GUILE_PKG_LDFLAGS} GUILE_LDFLAGS)
 
 # Debug build
 
@@ -49,7 +61,7 @@ configure_file (
 # shell il faut les ajouter ici
 ##
 add_executable(ensishell src/readcmd.c src/ensishell.c)
-target_link_libraries(ensishell readline history guile-2.0 gc)
+target_link_libraries(ensishell readline history ${GUILE_LDFLAGS})
 
 ##
 # Programme de test

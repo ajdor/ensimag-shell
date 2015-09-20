@@ -1,5 +1,5 @@
 /*****************************************************
- * Copyright Grégory Mounié 2008-2013                *
+ * Copyright Grégory Mounié 2008-2015                *
  *           Simon Nieuviarts 2002-2009              *
  * This code is distributed under the GLPv3 licence. *
  * Ce code est distribué sous la licence GPLv3+.     *
@@ -22,7 +22,7 @@
 #define USE_GUILE
 
 #ifdef USE_GUILE
-#include <guile/2.0/libguile.h>
+#include <libguile.h>
 
 int executer(char *line)
 {
@@ -38,7 +38,7 @@ int executer(char *line)
 
 SCM executer_wrapper(SCM x)
 {
-        return scm_from_int(executer(scm_to_latin1_stringn(x, 0)));
+        return scm_from_int(executer(scm_to_locale_stringn(x, 0)));
 }
 #endif
 
@@ -75,7 +75,7 @@ int main() {
 /* The line is a scheme command */
 			char catchligne[strlen(line) + 256];
 			sprintf(catchligne, "(catch #t (lambda () %s) (lambda (key . parameters) (display \"mauvaise expression/bug en scheme\n\")))", line);
-			scm_eval_string(scm_from_latin1_string(catchligne));
+			scm_eval_string(scm_from_locale_string(catchligne));
                         continue;
                 }
 #endif
