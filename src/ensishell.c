@@ -33,6 +33,7 @@ int executer(char *line)
 	 */
 	printf("Not implemented: can not execute %s\n", line);
 
+	free(line);
 	return 0;
 }
 
@@ -42,6 +43,15 @@ SCM executer_wrapper(SCM x)
 }
 #endif
 
+
+void terminate(char *line) {
+#ifdef USE_GNU_READLINE
+	rl_clear_history();
+#endif
+	free(line);
+	printf("exit\n");
+	exit(0);
+}
 
 
 int main() {
@@ -55,14 +65,16 @@ int main() {
 
 	while (1) {
 		struct cmdline *l;
-		char *line;
+		char *line=0;
 		int i, j;
 		char *prompt = "ensishell>";
 
+		/* Readline use some internal memory structure that
+		   can not be cleaned at the end of the program. Thus
+		   one memory leak per command seems unavoidable yet */
 		line = readline(prompt);
 		if (line == 0 || ! strncmp(line,"exit", 4)) {
-			printf("exit\n");
-			exit(0);
+			terminate(line);
 		}
 
 #ifdef USE_GNU_READLINE
@@ -84,8 +96,7 @@ int main() {
 
 		/* If input stream closed, normal termination */
 		if (!l) {
-			printf("exit\n");
-			exit(0);
+			terminate(line);
 		}
 		
 
@@ -109,5 +120,7 @@ int main() {
                         }
 			printf("\n");
 		}
+		free(line);
 	}
+
 }
