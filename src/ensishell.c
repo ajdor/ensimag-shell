@@ -33,7 +33,9 @@ int executer(char *line)
 	 */
 	printf("Not implemented: can not execute %s\n", line);
 
+	/* Remove this line when using parsecmd as it will free it */
 	free(line);
+	
 	return 0;
 }
 
@@ -48,7 +50,8 @@ void terminate(char *line) {
 #ifdef USE_GNU_READLINE
 	rl_clear_history();
 #endif
-	free(line);
+	if (line)
+	  free(line);
 	printf("exit\n");
 	exit(0);
 }
@@ -88,15 +91,18 @@ int main() {
 			char catchligne[strlen(line) + 256];
 			sprintf(catchligne, "(catch #t (lambda () %s) (lambda (key . parameters) (display \"mauvaise expression/bug en scheme\n\")))", line);
 			scm_eval_string(scm_from_locale_string(catchligne));
+			free(line);
                         continue;
                 }
 #endif
 
+		/* parsecmd free "line" */
 		l = parsecmd(line);
 
 		/* If input stream closed, normal termination */
 		if (!l) {
-			terminate(line);
+		  
+			terminate(0);
 		}
 		
 
@@ -120,7 +126,6 @@ int main() {
                         }
 			printf("\n");
 		}
-		free(line);
 	}
 
 }
