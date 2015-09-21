@@ -31,7 +31,7 @@ int executer(char *line)
 	 * parsecmd, then fork+execvp, for a single command.
 	 * pipe and i/o redirection are not required.
 	 */
-	printf("Not implemented: can not execute %s", line);
+	printf("Not implemented: can not execute %s\n", line);
 
 	return 0;
 }
