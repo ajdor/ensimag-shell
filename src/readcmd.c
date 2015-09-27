@@ -215,8 +215,9 @@ static void freecmd(struct cmdline *s)
 }
 
 
-struct cmdline *parsecmd(char *line)
+struct cmdline *parsecmd(char **pline)
 {
+	char *line = *pline;
 	static struct cmdline *static_cmdline = 0;
 	struct cmdline *s = static_cmdline;
 	char **words;
@@ -243,6 +244,7 @@ struct cmdline *parsecmd(char *line)
 
 	words = split_in_words(line);
 	free(line);
+	*pline = NULL;
 
 	if (!s)
 		static_cmdline = s = xmalloc(sizeof(struct cmdline));

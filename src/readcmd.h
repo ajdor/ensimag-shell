@@ -19,8 +19,9 @@
 #define USE_GNU_READLINE
 
 /* Read a command line from input stream. Return null when input closed.
-Display an error and call exit() in case of memory exhaustion. */
-struct cmdline *parsecmd(char *line);
+Display an error and call exit() in case of memory exhaustion. 
+It frees also line and set it at NULL */
+struct cmdline *parsecmd(char **line);
 
 
 #ifndef USE_GNU_READLINE

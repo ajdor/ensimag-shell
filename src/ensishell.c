@@ -96,8 +96,8 @@ int main() {
                 }
 #endif
 
-		/* parsecmd free "line" */
-		l = parsecmd(line);
+		/* parsecmd free line and set it up to 0 */
+		l = parsecmd( & line);
 
 		/* If input stream closed, normal termination */
 		if (!l) {
