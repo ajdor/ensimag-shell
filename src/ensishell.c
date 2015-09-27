@@ -48,7 +48,8 @@ SCM executer_wrapper(SCM x)
 
 void terminate(char *line) {
 #ifdef USE_GNU_READLINE
-	rl_clear_history();
+	/* rl_clear_history() does not exist yet in centOS 6 */
+	clear_history();
 #endif
 	if (line)
 	  free(line);
