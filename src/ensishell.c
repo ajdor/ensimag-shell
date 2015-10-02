@@ -87,8 +87,8 @@ int main() {
 
 
 #ifdef USE_GUILE
+		/* The line is a scheme command */
 		if (line[0] == '(') {
-/* The line is a scheme command */
 			char catchligne[strlen(line) + 256];
 			sprintf(catchligne, "(catch #t (lambda () %s) (lambda (key . parameters) (display \"mauvaise expression/bug en scheme\n\")))", line);
 			scm_eval_string(scm_from_locale_string(catchligne));

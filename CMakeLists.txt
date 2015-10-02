@@ -26,6 +26,12 @@ if (NOT "${GUILE_PKG_LDFLAGS}" STREQUAL "")
   set(USE_GUILE 1)
   string(STRIP ${GUILE_PKG_CFLAGS} GUILE_CFLAGS)
   string(STRIP ${GUILE_PKG_LDFLAGS} GUILE_LDFLAGS)
+
+  # Ensimag debug: if libltld.so is required but not there, put explicit path
+  find_library(LIBLTDL ltdl)
+  if (${GUILE_LDFLAGS} MATCHES "-lltdl" AND NOT ${LIBLTDL})
+    string(REPLACE "-lltdl" "/usr/lib64/libltdl.so.7" GUILE_LDFLAGS ${GUILE_LDFLAGS})
+  endif()
 else()
   set(USE_GUILE 0)
 endif()
