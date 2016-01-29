@@ -61,7 +61,7 @@ void terminate(char *line) {
 int main() {
         printf("Variante %d: %s\n", VARIANTE, VARIANTE_STRING);
 
-#ifdef USE_GUILE
+#if USE_GUILE == 1
         scm_init_guile();
         /* register "executer" function in scheme */
         scm_c_define_gsubr("executer", 1, 0, 0, executer_wrapper);
@@ -81,12 +81,12 @@ int main() {
 			terminate(line);
 		}
 
-#ifdef USE_GNU_READLINE
+#if USE_GNU_READLINE == 1
 		add_history(line);
 #endif
 
 
-#ifdef USE_GUILE
+#if USE_GUILE == 1
 		/* The line is a scheme command */
 		if (line[0] == '(') {
 			char catchligne[strlen(line) + 256];

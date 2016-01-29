@@ -36,6 +36,17 @@ else()
   set(USE_GUILE 0)
 endif()
 
+####
+# Detect if gnu readline header is present, otherwise use internal readline
+####
+find_path(READLINE_PATH "include/readline/readline.h")
+if (NOT "${READLINE_PATH}" STREQUAL "")
+  set(USE_GNU_READLINE 1)
+else()
+  set(USE_GNU_READLINE 0)
+endif()
+
+
 # Debug build
 
 set(CMAKE_BUILD_TYPE Debug)
