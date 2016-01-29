@@ -24,14 +24,14 @@
 #if USE_GUILE == 1
 #include <libguile.h>
 
-int executer(char *line)
+int question6_executer(char *line)
 {
-	/* Insert your code to execute the command line
+	/* Question 6: Insert your code to execute the command line
 	 * identically to the standard execution scheme:
 	 * parsecmd, then fork+execvp, for a single command.
 	 * pipe and i/o redirection are not required.
 	 */
-	printf("Not implemented: can not execute %s\n", line);
+	printf("Not implemented yet: can not execute %s\n", line);
 
 	/* Remove this line when using parsecmd as it will free it */
 	free(line);
@@ -41,7 +41,7 @@ int executer(char *line)
 
 SCM executer_wrapper(SCM x)
 {
-        return scm_from_int(executer(scm_to_locale_stringn(x, 0)));
+        return scm_from_int(question6_executer(scm_to_locale_stringn(x, 0)));
 }
 #endif
 
