@@ -42,8 +42,10 @@ endif()
 find_path(READLINE_PATH "include/readline/readline.h")
 if (NOT "${READLINE_PATH}" STREQUAL "")
   set(USE_GNU_READLINE 1)
+  set(READLINE_LDFLAGS readline history)
 else()
   set(USE_GNU_READLINE 0)
+  set(READLINE_LDFLAGS)
 endif()
 
 
@@ -83,7 +85,7 @@ configure_file (
 # shell il faut les ajouter ici
 ##
 add_executable(ensishell src/readcmd.c src/ensishell.c)
-target_link_libraries(ensishell readline history ${GUILE_LDFLAGS})
+target_link_libraries(ensishell ${READLINE_LDFLAGS} ${GUILE_LDFLAGS})
 
 ##
 # Programme de test
