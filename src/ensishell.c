@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "variante.h"
 #include "readcmd.h"
@@ -47,7 +48,7 @@ SCM executer_wrapper(SCM x)
 
 
 void terminate(char *line) {
-#ifdef USE_GNU_READLINE
+#if USE_GNU_READLINE == 1
 	/* rl_clear_history() does not exist yet in centOS 6 */
 	clear_history();
 #endif

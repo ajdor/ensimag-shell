@@ -14,9 +14,8 @@
 
 
 
-/* If GNU Readline is not available, comment the  next line to use readcmd
-   internal simple line reader */
-#define USE_GNU_READLINE
+/* If GNU Readline is not available, internal readline will be used*/
+#include "variante.h"
 
 /* Read a command line from input stream. Return null when input closed.
 Display an error and call exit() in case of memory exhaustion. 
@@ -24,9 +23,9 @@ It frees also line and set it at NULL */
 struct cmdline *parsecmd(char **line);
 
 
-#ifndef USE_GNU_READLINE
+#if USE_GNU_READLINE == 0
 /* Read a line from standard input and put it in a char[] */
-char *readline(char *prompt)
+char *readline(char *prompt);
 
 #else
 #include <readline/readline.h>
