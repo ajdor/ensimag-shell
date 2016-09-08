@@ -15,13 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-require "test/unit"
+require "minitest/autorun"
 require "expect"
 require "pty"
 
 require "../tests/testConstantes"
 
-class Test0Prompt < Test::Unit::TestCase
+class Test0Prompt < Minitest::Test
   test_order=:defined
 
   def setup
@@ -34,12 +34,12 @@ class Test0Prompt < Test::Unit::TestCase
 
   def test_ensiprompt
     # a = @pty_read.expect(PROMPT, DELAI)
-    # assert_not_equal(nil, a, "Le prompt attendu est 'ensishell>' !")
+    # refute_equal(nil, a, "Le prompt attendu est 'ensishell>' !")
   end
 
   def test_varianteNumber
     a = @pty_read.expect(/^Variante (\d+): (.*)\r/, DELAI)
-    assert_not_equal(nil, a, "Pas d'affichage donnant la variante")
+    refute_nil(a, "Pas d'affichage donnant la variante")
     # puts "\nLa variante qui doit être implantée: #{a[1]} , #{a[2]}"
     test_ensiprompt()
     # a = @pty_read.expect(/.+/, DELAI)

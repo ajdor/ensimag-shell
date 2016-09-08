@@ -15,13 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-require "test/unit"
+require "minitest/autorun"
 require "expect"
 require "pty"
 
 require "../tests/testConstantes"
 
-class Test1ForkExec < Test::Unit::TestCase
+class Test1ForkExec < Minitest::Test
   test_order=:defined
 
   def setup
@@ -35,13 +35,13 @@ class Test1ForkExec < Test::Unit::TestCase
   def test_seq
     @pty_write.puts("seq 0 3")
     a = @pty_read.expect(/0\r\n1\r\n2\r\n3/m, DELAI)
-    assert_not_nil(a, "Sortie incohérente pour 'seq 0 3'")
+    refute_nil(a, "Sortie incohérente pour 'seq 0 3'")
   end
 
   def test_printf
     @pty_write.puts("printf 'toto%dtoto' 10")
     a = @pty_read.expect(/toto10toto/, DELAI)
-    assert_not_nil(a, "Sortie incohérente pour 'seq 0 3'")
+    refute_nil(a, "Sortie incohérente pour 'seq 0 3'")
   end
 
   def test_all
