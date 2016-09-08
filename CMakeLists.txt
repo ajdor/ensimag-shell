@@ -7,6 +7,18 @@ project(Ensishell)
 enable_testing()
 
 #######
+# Detect presence of minitest using gem
+# install it if not available
+#######
+execute_process(COMMAND gem which minitest RESULT_VARIABLE GEM_MINITEST)
+if (NOT ${GEM_MINITEST} EQUAL 0)
+  execute_process(COMMAND gem install minitest RESULT_VARIABLE GEM_MINITEST_INSTALL)
+  if (${GEM_MINITEST_INSTALL} EQUAL 0)
+    message(FATAL_ERROR "Ruby: gem: minitest unavailable and uninstallable")
+  endif ()
+endif ()
+
+#######
 # Detect Guile en utilisant pkg-config
 # Si guile est desactivé dans ensishell.c vous pouvez commenter les lignes
 #####
