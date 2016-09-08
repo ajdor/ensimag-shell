@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "variante.h"
 #include "readcmd.h"
@@ -24,14 +25,14 @@
 #if USE_GUILE == 1
 #include <libguile.h>
 
-int executer(char *line)
+int question6_executer(char *line)
 {
-	/* Insert your code to execute the command line
+	/* Question 6: Insert your code to execute the command line
 	 * identically to the standard execution scheme:
 	 * parsecmd, then fork+execvp, for a single command.
 	 * pipe and i/o redirection are not required.
 	 */
-	printf("Not implemented: can not execute %s\n", line);
+	printf("Not implemented yet: can not execute %s\n", line);
 
 	/* Remove this line when using parsecmd as it will free it */
 	free(line);
@@ -41,13 +42,13 @@ int executer(char *line)
 
 SCM executer_wrapper(SCM x)
 {
-        return scm_from_int(executer(scm_to_locale_stringn(x, 0)));
+        return scm_from_int(question6_executer(scm_to_locale_stringn(x, 0)));
 }
 #endif
 
 
 void terminate(char *line) {
-#ifdef USE_GNU_READLINE
+#if USE_GNU_READLINE == 1
 	/* rl_clear_history() does not exist yet in centOS 6 */
 	clear_history();
 #endif
@@ -61,7 +62,7 @@ void terminate(char *line) {
 int main() {
         printf("Variante %d: %s\n", VARIANTE, VARIANTE_STRING);
 
-#ifdef USE_GUILE
+#if USE_GUILE == 1
         scm_init_guile();
         /* register "executer" function in scheme */
         scm_c_define_gsubr("executer", 1, 0, 0, executer_wrapper);
@@ -81,12 +82,12 @@ int main() {
 			terminate(line);
 		}
 
-#ifdef USE_GNU_READLINE
+#if USE_GNU_READLINE == 1
 		add_history(line);
 #endif
 
 
-#ifdef USE_GUILE
+#if USE_GUILE == 1
 		/* The line is a scheme command */
 		if (line[0] == '(') {
 			char catchligne[strlen(line) + 256];

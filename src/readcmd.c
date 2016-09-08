@@ -14,9 +14,6 @@
 #include <string.h>
 #include "readcmd.h"
 
-#ifdef USE_GNU_READLINE
-#endif
-
 static void memory_error(void)
 {
 	errno = ENOMEM;
@@ -40,7 +37,7 @@ static void *xrealloc(void *ptr, size_t size)
 	return p;
 }
 
-#ifndef USE_GNU_READLINE
+#if USE_GNU_READLINE == 0
 /* Read a line from standard input and put it in a char[] */
 char *readline(char *prompt)
 {
