@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 #include "variante.h"
 #include "readcmd.h"
@@ -122,14 +123,11 @@ int main() {
 		/* Display each command of the pipe */
 		for (i=0; l->seq[i]!=0; i++) {
 			char **cmd = l->seq[i];
-			// printf("seq[%d]: ", i);
-            //             for (j=0; cmd[j]!=0; j++) {
-            //                     printf("'%s' ", cmd[j]);
-            //             }
-			int pid;
-			if ((pid = fork()) == 0){
-				printf("\n");
+			pid_t pid = fork();
+			if (pid == 0){
 				execvp(cmd[0], cmd);
+			}else{
+				wait(&pid);
 			}
 
 		}
