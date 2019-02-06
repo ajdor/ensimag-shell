@@ -124,10 +124,14 @@ int main() {
 		for (i=0; l->seq[i]!=0; i++) {
 			char **cmd = l->seq[i];
 			pid_t pid = fork();
-			if (pid == 0){
+			if (pid < 0){
+				exit(1);
+			}
+			else if (pid == 0){
 				execvp(cmd[0], cmd);
 			}else{
-				wait(&pid);
+				if(!l->bg)
+					wait(&pid);
 			}
 
 		}
