@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "variante.h"
 #include "readcmd.h"
@@ -58,7 +59,6 @@ void terminate(char *line) {
 	exit(0);
 }
 
-
 int main() {
         printf("Variante %d: %s\n", VARIANTE, VARIANTE_STRING);
 
@@ -71,7 +71,7 @@ int main() {
 	while (1) {
 		struct cmdline *l;
 		char *line=0;
-		int i, j;
+		int i;
 		char *prompt = "ensishell>";
 
 		/* Readline use some internal memory structure that
@@ -122,11 +122,16 @@ int main() {
 		/* Display each command of the pipe */
 		for (i=0; l->seq[i]!=0; i++) {
 			char **cmd = l->seq[i];
-			printf("seq[%d]: ", i);
-                        for (j=0; cmd[j]!=0; j++) {
-                                printf("'%s' ", cmd[j]);
-                        }
-			printf("\n");
+			// printf("seq[%d]: ", i);
+            //             for (j=0; cmd[j]!=0; j++) {
+            //                     printf("'%s' ", cmd[j]);
+            //             }
+			int pid;
+			if ((pid = fork()) == 0){
+				printf("\n");
+				execvp(cmd[0], cmd);
+			}
+
 		}
 	}
 
