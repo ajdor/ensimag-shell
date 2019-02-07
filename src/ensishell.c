@@ -28,6 +28,9 @@
 
 #include <libguile.h>
 
+int jobs[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+int jobs_index = 0;
+
 void execCommands(struct cmdline *pCmdline);
 
 void execPipe();
@@ -67,38 +70,65 @@ void terminate(char *line) {
 void execPipe(struct cmdline *l) {
 }
 
+void execJobs() {
+    int status;
+    for (int i = 0; i < 10; i++) {
+//        if (jobs[i] != 0 && !kill(jobs[i], 0)) {
+        if (jobs[i] != 0) {
+            status = waitpid(jobs[i], &status, 0 | WNOHANG);
+            if (!kill(jobs[i], 0) && status == 0) {
+                printf("[STATUS BG] %d\n", status);
+                printf("[PID] %d\n", jobs[i]);
+            }
+        }
+    }
+}
+
 void execCommands(struct cmdline *l) {
     pid_t pid;
     /* l->seq[0] is the first command and l->seq[1] is the second if a pipe is used */
+    int status = 0;
     switch (pid = fork()) {
         case -1:
 //            exit(1);
             break;
         case 0:
-//            if (l->seq[1] != NULL) {
-//                printf("PIPE DETECTED");
-//                int res;
-//                int tuyau[2];
-//                pipe(tuyau);
-//                if ((res = fork()) == 0) {
-//                    dup2(tuyau[0], 0);
-//                    close(tuyau[1]);
-//                    close(tuyau[0]);
-//                    execvp(*(l->seq[1]), *(l->seq));
-//                }
-//                dup2(tuyau[1], 1);
-//                close(tuyau[0]);
-//                close(tuyau[1]);
-//                execvp(*(l->seq[0]), *(l->seq));
-//            } else {
+            if (l->seq[1] != NULL) {
+                printf("PIPE DETECTED\n");
+                int tuyau[2];
+                pipe(tuyau);
+                int res = 0;
+                printf("[RES] %d\n", res);
+                if ((res = fork()) == 0) {
+                    printf("[RES IF] %d\n", res);
+                    dup2(tuyau[0], 0);
+                    close(tuyau[1]);
+                    close(tuyau[0]);
+                    execvp(*(l->seq[1]), *(l->seq));
+                } else {
+                    printf("[RES ELSE] %d\n", res);
+                }
+                dup2(tuyau[1], 1);
+                close(tuyau[0]);
+                close(tuyau[1]);
                 execvp(*(l->seq[0]), *(l->seq));
-//            }
+            } else if (strcmp(*l->seq[0], "jobs") == 0) {
+                execJobs();
+            } else {
+                execvp(*(l->seq[0]), *(l->seq));
+            }
             break;
         default:
             if (!l->bg) {
-                int status;
                 waitpid(pid, &status, 0);
 //                wait(&pid);
+            } else {
+                jobs[jobs_index] = pid;
+                jobs_index++;
+                printf("[STATUS BG] %d\n", status);
+                waitpid(pid, &status, WNOHANG);
+
+                printf("[STATUS BG] %d\n", status);
             }
             break;
     }
@@ -117,7 +147,7 @@ int main() {
     while (1) {
         struct cmdline *l;
         char *line = 0;
-        int i, j;
+//        int i, j;
         char *prompt = "ensishell>";
 
         /* Readline use some internal memory structure that
@@ -169,13 +199,13 @@ int main() {
         if (l->bg) printf("background (&)\n");
 
         /* Display each command of the pipe */
-        for (i = 0; l->seq[i] != 0; i++) {
-            char **cmd = l->seq[i];
-            printf("seq[%d]: ", i);
-            for (j = 0; cmd[j] != 0; j++) {
-                printf("'%s' ", cmd[j]);
-            }
-            printf("\n");
-        }
+//        for (i = 0; l->seq[i] != 0; i++) {
+//            char **cmd = l->seq[i];
+//            printf("seq[%d]: ", i);
+//            for (j = 0; cmd[j] != 0; j++) {
+//                printf("'%s' ", cmd[j]);
+//            }
+//            printf("\n");
+//        }
     }
 }
