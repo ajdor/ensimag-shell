@@ -75,29 +75,30 @@ void execCommands(struct cmdline *l) {
 //            exit(1);
             break;
         case 0:
-            if (l->seq[1] != NULL) {
-                printf("PIPE DETECTED");
-                int res;
-                int tuyau[2];
-                pipe(tuyau);
-                if ((res = fork()) == 0) {
-                    dup2(tuyau[0], 0);
-                    close(tuyau[1]);
-                    close(tuyau[0]);
-                    execvp(*(l->seq[1]), *(l->seq));
-                }
-                dup2(tuyau[1], 1);
-                close(tuyau[0]);
-                close(tuyau[1]);
+//            if (l->seq[1] != NULL) {
+//                printf("PIPE DETECTED");
+//                int res;
+//                int tuyau[2];
+//                pipe(tuyau);
+//                if ((res = fork()) == 0) {
+//                    dup2(tuyau[0], 0);
+//                    close(tuyau[1]);
+//                    close(tuyau[0]);
+//                    execvp(*(l->seq[1]), *(l->seq));
+//                }
+//                dup2(tuyau[1], 1);
+//                close(tuyau[0]);
+//                close(tuyau[1]);
+//                execvp(*(l->seq[0]), *(l->seq));
+//            } else {
                 execvp(*(l->seq[0]), *(l->seq));
-            } else {
-                execvp(*(l->seq[0]), *(l->seq));
-            }
+//            }
             break;
         default:
             if (!l->bg) {
-                printf("WAITING\n");
-                wait(&pid);
+                int status;
+                waitpid(pid, &status, 0);
+//                wait(&pid);
             }
             break;
     }
