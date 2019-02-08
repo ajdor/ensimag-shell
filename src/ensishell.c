@@ -75,9 +75,10 @@ void execJobs() {
     for (int i = 0; i < 10; i++) {
 //        if (jobs[i] != 0 && !kill(jobs[i], 0)) {
         if (jobs[i] != 0) {
-            status = waitpid(jobs[i], &status, 0 | WNOHANG);
+            printf("[JOB] %d\n", jobs[i]);
+            status = waitpid(jobs[i], &status, WNOHANG);
+            printf("[STATUS BG] %d\n", status);
             if (!kill(jobs[i], 0) && status == 0) {
-                printf("[STATUS BG] %d\n", status);
                 printf("[PID] %d\n", jobs[i]);
             }
         }
@@ -93,26 +94,27 @@ void execCommands(struct cmdline *l) {
 //            exit(1);
             break;
         case 0:
-            if (l->seq[1] != NULL) {
-                printf("PIPE DETECTED\n");
-                int tuyau[2];
-                pipe(tuyau);
-                int res = 0;
-                printf("[RES] %d\n", res);
-                if ((res = fork()) == 0) {
-                    printf("[RES IF] %d\n", res);
-                    dup2(tuyau[0], 0);
-                    close(tuyau[1]);
-                    close(tuyau[0]);
-                    execvp(*(l->seq[1]), *(l->seq));
-                } else {
-                    printf("[RES ELSE] %d\n", res);
-                }
-                dup2(tuyau[1], 1);
-                close(tuyau[0]);
-                close(tuyau[1]);
-                execvp(*(l->seq[0]), *(l->seq));
-            } else if (strcmp(*l->seq[0], "jobs") == 0) {
+//            if (l->seq[1] != NULL) {
+//                printf("PIPE DETECTED\n");
+//                int tuyau[2];
+//                pipe(tuyau);
+//                int res = 0;
+//                printf("[RES] %d\n", res);
+//                if ((res = fork()) == 0) {
+//                    printf("[RES IF] %d\n", res);
+//                    dup2(tuyau[0], 0);
+//                    close(tuyau[1]);
+//                    close(tuyau[0]);
+//                    execvp(*(l->seq[1]), *(l->seq));
+//                } else {
+//                    printf("[RES ELSE] %d\n", res);
+//                }
+//                dup2(tuyau[1], 1);
+//                close(tuyau[0]);
+//                close(tuyau[1]);
+//                execvp(*(l->seq[0]), *(l->seq));
+//            } else
+            if (strcmp(*l->seq[0], "jobs") == 0) {
                 execJobs();
             } else {
                 execvp(*(l->seq[0]), *(l->seq));
@@ -123,12 +125,23 @@ void execCommands(struct cmdline *l) {
                 waitpid(pid, &status, 0);
 //                wait(&pid);
             } else {
-                jobs[jobs_index] = pid;
-                jobs_index++;
+                pid_t bgPid = waitpid(pid, &status, WNOHANG);
+//                execvp(*(l->seq[0]), *(l->seq));
                 printf("[STATUS BG] %d\n", status);
-                waitpid(pid, &status, WNOHANG);
-
-                printf("[STATUS BG] %d\n", status);
+                if (status == -1) {
+                    /* error */
+                    printf("[PID] %d encountered an error\n", status);
+                } else if (status == 0) {
+                    /* child is still running */
+                    jobs[jobs_index] = pid;
+                    jobs_index++;
+                    printf("[PID] %d is running\n", status);
+                } else if (bgPid == pid) {
+                    /* child is finished. exit status in   status */
+                    printf("[PID] %d finished\n", status);
+                } else {
+                    printf("[PID] %d unknown status\n", status);
+                }
             }
             break;
     }
