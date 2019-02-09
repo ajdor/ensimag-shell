@@ -28,12 +28,14 @@
 
 #include <libguile.h>
 
-int jobs[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+int jobs[10] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 int jobs_index = 0;
 
 void execCommands(struct cmdline *pCmdline);
 
 void execPipe();
+
+void execBackground(pid_t pid);
 
 int question6_executer(char *line) {
     /* Question 6: Insert your code to execute the command line
@@ -70,16 +72,21 @@ void terminate(char *line) {
 void execPipe(struct cmdline *l) {
 }
 
-void execJobs() {
+void execJobs(pid_t pid) {
     int status;
+    printf("[JOBS] Parent pid: %d\n", pid);
     for (int i = 0; i < 10; i++) {
-//        if (jobs[i] != 0 && !kill(jobs[i], 0)) {
-        if (jobs[i] != 0) {
+        if (jobs[i] != -1 && waitpid(jobs[i], &status, WNOHANG)) {
             printf("[JOB] %d\n", jobs[i]);
-            status = waitpid(jobs[i], &status, WNOHANG);
-            printf("[STATUS BG] %d\n", status);
-            if (!kill(jobs[i], 0) && status == 0) {
-                printf("[PID] %d\n", jobs[i]);
+            printf("\t[JOB STATUS] %d\n", status);
+            if (WIFEXITED(status)) {
+                printf("\texited, status=%d\n", WEXITSTATUS(status));
+            } else if (WIFSIGNALED(status)) {
+                printf("\tkilled by signal %d\n", WTERMSIG(status));
+            } else if (WIFSTOPPED(status)) {
+                printf("\tstopped by signal %d\n", WSTOPSIG(status));
+            } else if (WIFCONTINUED(status)) {
+                printf("\tcontinued\n");
             }
         }
     }
@@ -91,61 +98,39 @@ void execCommands(struct cmdline *l) {
     int status = 0;
     switch (pid = fork()) {
         case -1:
-//            exit(1);
+            printf("/!\\ FORK FAILED /!\\\n");
             break;
         case 0:
-//            if (l->seq[1] != NULL) {
-//                printf("PIPE DETECTED\n");
-//                int tuyau[2];
-//                pipe(tuyau);
-//                int res = 0;
-//                printf("[RES] %d\n", res);
-//                if ((res = fork()) == 0) {
-//                    printf("[RES IF] %d\n", res);
-//                    dup2(tuyau[0], 0);
-//                    close(tuyau[1]);
-//                    close(tuyau[0]);
-//                    execvp(*(l->seq[1]), *(l->seq));
-//                } else {
-//                    printf("[RES ELSE] %d\n", res);
-//                }
-//                dup2(tuyau[1], 1);
-//                close(tuyau[0]);
-//                close(tuyau[1]);
-//                execvp(*(l->seq[0]), *(l->seq));
-//            } else
+            setpgid(pid, 0);
             if (strcmp(*l->seq[0], "jobs") == 0) {
-                execJobs();
+                execJobs(pid);
             } else {
                 execvp(*(l->seq[0]), *(l->seq));
+                if (status < 0) {
+                    printf("/!\\ command {%s} not found /!\\\n", *(l->seq[0]));
+                } else {
+                    printf("Executed %s with return code %d\n", *(l->seq[0]), status);
+                    perror("/!\\ ERROR /!\\");
+                }
+                exit(1);
             }
+
             break;
         default:
+            /* Ignore dead children */
+            /* Temporary workaround before implementing SIGCHLD handler */
+            signal(SIGCHLD, SIG_IGN);
             if (!l->bg) {
-                waitpid(pid, &status, 0);
-//                wait(&pid);
+                waitpid(pid, 0, 0);
             } else {
-                pid_t bgPid = waitpid(pid, &status, WNOHANG);
-//                execvp(*(l->seq[0]), *(l->seq));
-                printf("[STATUS BG] %d\n", status);
-                if (status == -1) {
-                    /* error */
-                    printf("[PID] %d encountered an error\n", status);
-                } else if (status == 0) {
-                    /* child is still running */
-                    jobs[jobs_index] = pid;
-                    jobs_index++;
-                    printf("[PID] %d is running\n", status);
-                } else if (bgPid == pid) {
-                    /* child is finished. exit status in   status */
-                    printf("[PID] %d finished\n", status);
-                } else {
-                    printf("[PID] %d unknown status\n", status);
-                }
+                waitpid(-1, &status, WNOHANG);
+                jobs[jobs_index] = pid;
+                jobs_index++;
+                if (WIFEXITED (status))
+                    printf("Exited with code %d\n", WEXITSTATUS (status));
             }
             break;
     }
-
 }
 
 int main() {
@@ -201,15 +186,30 @@ int main() {
         /* Execute commands */
         execCommands(l);
 
+        /* Check if any children process are done to remove them from jobs */
+        pid_t deadPid;
+        int deadStatus;
+        while ((deadPid = waitpid(-1, &deadStatus, WNOHANG)) > 0) {
+            printf("[proc %d exited with code %d]\n",
+                   deadPid, WEXITSTATUS(deadStatus));
+            /* here you can remove the pid from your jobs list */
+            for (int i = 0; i < 10; i++) {
+                if (jobs[i] == deadPid) {
+                    jobs[i] = -1;
+                    jobs_index--;
+                }
+            }
+        }
+
         if (l->err) {
             /* Syntax error, read another command */
             printf("error: %s\n", l->err);
             continue;
         }
 
-        if (l->in) printf("in: %s\n", l->in);
-        if (l->out) printf("out: %s\n", l->out);
-        if (l->bg) printf("background (&)\n");
+//        if (l->in) printf("in: %s\n", l->in);
+//        if (l->out) printf("out: %s\n", l->out);
+//        if (l->bg) printf("background (&)\n");
 
         /* Display each command of the pipe */
 //        for (i = 0; l->seq[i] != 0; i++) {
