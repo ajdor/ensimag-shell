@@ -30,15 +30,14 @@
 
 typedef struct jobs {
     pid_t pid;
-//    char *cmd;
+    char *cmd;
     struct jobs *next;
 } jobs;
 
+int verbose = 0;
 static jobs *background_jobs = NULL;
 
-//int jobs[10] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
-//int jobs_index = 0;
-
+int exec_pipe(struct cmdline *pCmdline);
 
 int question6_executer(char *line) {
     /* Question 6: Insert your code to execute the command line
@@ -68,7 +67,6 @@ void terminate(char *line) {
 #endif
     if (line)
         free(line);
-//    printf("exit\n");
     printf("thanks for you using ensishell :)\n");
     exit(0);
 }
@@ -85,8 +83,7 @@ void exec_background(pid_t pid, char *cmd) {
         jobs *new_job = malloc(sizeof(jobs));
         new_job->pid = pid;
         /* Weird behaviour */
-//        new_job->cmd = cmd;
-//        strncpy(new_job->cmd, cmd, strlen(cmd));
+        new_job->cmd = cmd;
         new_job->next = background_jobs;
         background_jobs = new_job;
     }
@@ -105,7 +102,6 @@ void exec_jobs() {
     do {
         status = kill(current->pid, 0);
         if (status == 0) {
-//            printf("[JOB] pid: %d, cmd: %s\n", current->pid, current->cmd);
             printf("[JOB] pid: %d\n", current->pid);
             prev = current;
             current = current->next;
@@ -129,6 +125,21 @@ void exec_jobs() {
     }
 }
 
+int exec_pipe(struct cmdline *pCmdline) {
+    int pipe_descriptor[2];
+    pipe(pipe_descriptor);
+    if (fork() == 0) {
+        dup2(pipe_descriptor[0], 0);
+        close(pipe_descriptor[1]);
+        close(pipe_descriptor[0]);
+        execvp(*(pCmdline->seq[1]), *(pCmdline->seq + 1));
+    }
+    dup2(pipe_descriptor[1], 1);
+    close(pipe_descriptor[0]);
+    close(pipe_descriptor[1]);
+    return execvp(*(pCmdline->seq[0]), *(pCmdline->seq));
+}
+
 void exec_commands(struct cmdline *pCmdline) {
     pid_t pid;
     /* l->seq[0] is the first command and l->seq[1] is the second if a pipe is used */
@@ -138,24 +149,27 @@ void exec_commands(struct cmdline *pCmdline) {
             printf("/!\\ FORK FAILED /!\\\n");
             break;
         case 0:
-//            setpgid(pid, 0);
-            if (strcmp(*pCmdline->seq[0], "jobs") == 0) {
-                exec_jobs();
-            } else if (strcmp(*pCmdline->seq[0], "exit") == 0) {
+            /* Child section */
+            if (strcmp(*pCmdline->seq[0], "exit") == 0) {
                 exit(0);
+            } else if (strcmp(*pCmdline->seq[0], "jobs") == 0) {
+                exec_jobs();
             } else {
-                status = execvp(*(pCmdline->seq[0]), *(pCmdline->seq));
+                if (pCmdline->seq[1]) {
+                    status = exec_pipe(pCmdline);
+                } else {
+                    status = execvp(*(pCmdline->seq[0]), *(pCmdline->seq));
+                }
                 if (status < 0) {
                     printf("/!\\ command %s not found /!\\\n", *(pCmdline->seq[0]));
                 } else {
                     printf("Executed %s with return code %d\n", *(pCmdline->seq[0]), status);
                     perror("/!\\ ERROR /!\\");
                 }
-                exit(1);
             }
-
             break;
         default:
+            /* Parent section */
             /* Ignore dead children */
             /* Temporary workaround before implementing SIGCHLD handler */
             signal(SIGCHLD, SIG_IGN);
@@ -183,7 +197,7 @@ int main() {
     while (1) {
         struct cmdline *l;
         char *line = 0;
-//        int i, j;
+        int i, j;
         char *prompt = "ensishell>";
 
         /* Readline use some internal memory structure that
@@ -224,39 +238,26 @@ int main() {
         /* Execute commands */
         exec_commands(l);
 
-        /* Check if any children process are done to remove them from jobs */
-//        pid_t deadPid;
-//        int deadStatus;
-//        while ((deadPid = waitpid(-1, &deadStatus, WNOHANG)) > 0) {
-//            printf("[proc %d exited with code %d]\n",
-//                   deadPid, WEXITSTATUS(deadStatus));
-//            /* here you can remove the pid from your jobs list */
-//            for (int i = 0; i < 10; i++) {
-//                if (jobs[i] == deadPid) {
-//                    jobs[i] = -1;
-//                    jobs_index--;
-//                }
-//            }
-//        }
-
         if (l->err) {
             /* Syntax error, read another command */
             printf("error: %s\n", l->err);
             continue;
         }
 
-//        if (l->in) printf("in: %s\n", l->in);
-//        if (l->out) printf("out: %s\n", l->out);
-//        if (l->bg) printf("background (&)\n");
+        if (verbose) {
+            if (l->in) printf("in: %s\n", l->in);
+            if (l->out) printf("out: %s\n", l->out);
+            if (l->bg) printf("background (&)\n");
 
-        /* Display each command of the pipe */
-//        for (i = 0; l->seq[i] != 0; i++) {
-//            char **cmd = l->seq[i];
-//            printf("seq[%d]: ", i);
-//            for (j = 0; cmd[j] != 0; j++) {
-//                printf("'%s' ", cmd[j]);
-//            }
-//            printf("\n");
-//        }
+            /* Display each command of the pipe */
+            for (i = 0; l->seq[i] != 0; i++) {
+                char **cmd = l->seq[i];
+                printf("seq[%d]: ", i);
+                for (j = 0; cmd[j] != 0; j++) {
+                    printf("'%s' ", cmd[j]);
+                }
+                printf("\n");
+            }
+        }
     }
 }
