@@ -28,14 +28,17 @@
 
 #include <libguile.h>
 
-int jobs[10] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
-int jobs_index = 0;
+typedef struct jobs {
+    pid_t pid;
+//    char *cmd;
+    struct jobs *next;
+} jobs;
 
-void execCommands(struct cmdline *pCmdline);
+static jobs *background_jobs = NULL;
 
-void execPipe();
+//int jobs[10] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+//int jobs_index = 0;
 
-void execBackground(pid_t pid);
 
 int question6_executer(char *line) {
     /* Question 6: Insert your code to execute the command line
@@ -65,34 +68,67 @@ void terminate(char *line) {
 #endif
     if (line)
         free(line);
-    printf("exit\n");
+//    printf("exit\n");
+    printf("thanks for you using ensishell :)\n");
     exit(0);
 }
 
-void execPipe(struct cmdline *l) {
-}
 
-void execJobs(pid_t pid) {
+void exec_background(pid_t pid, char *cmd) {
     int status;
-    printf("[JOBS] Parent pid: %d\n", pid);
-    for (int i = 0; i < 10; i++) {
-        if (jobs[i] != -1 && waitpid(jobs[i], &status, WNOHANG)) {
-            printf("[JOB] %d\n", jobs[i]);
-            printf("\t[JOB STATUS] %d\n", status);
-            if (WIFEXITED(status)) {
-                printf("\texited, status=%d\n", WEXITSTATUS(status));
-            } else if (WIFSIGNALED(status)) {
-                printf("\tkilled by signal %d\n", WTERMSIG(status));
-            } else if (WIFSTOPPED(status)) {
-                printf("\tstopped by signal %d\n", WSTOPSIG(status));
-            } else if (WIFCONTINUED(status)) {
-                printf("\tcontinued\n");
-            }
-        }
+    /* Execute process in background */
+    waitpid(pid, &status, WNOHANG);
+    /* Add the process to the background jobs if doesn't return immediately */
+    if (WIFEXITED (status)) {
+        printf("Exited with code %d\n", WEXITSTATUS (status));
+    } else {
+        jobs *new_job = malloc(sizeof(jobs));
+        new_job->pid = pid;
+        /* Weird behaviour */
+//        new_job->cmd = cmd;
+//        strncpy(new_job->cmd, cmd, strlen(cmd));
+        new_job->next = background_jobs;
+        background_jobs = new_job;
     }
 }
 
-void execCommands(struct cmdline *l) {
+void exec_jobs() {
+    /* Return nothing if no background job is running */
+    if (background_jobs == NULL) {
+        printf("no backgrounds jobs are running\n");
+        return;
+    }
+
+    int status;
+    struct jobs *current = background_jobs;
+    struct jobs *prev = background_jobs;
+    do {
+        status = kill(current->pid, 0);
+        if (status == 0) {
+//            printf("[JOB] pid: %d, cmd: %s\n", current->pid, current->cmd);
+            printf("[JOB] pid: %d\n", current->pid);
+            prev = current;
+            current = current->next;
+        } else if (status == -1) {
+            if (background_jobs != current) {
+                prev->next = current->next;
+            } else {
+                background_jobs = current->next;
+            }
+            current = current->next;
+            free(current);
+        } else {
+            printf("\t[JOB STATUS] pid: %d, status: %d\n", current->pid, status);
+        }
+    } while (current != NULL);
+
+    /* In case the jobs list is emptied when checking for dead processes */
+    if (background_jobs == NULL) {
+        printf("no backgrounds jobs are running\n");
+    }
+}
+
+void exec_commands(struct cmdline *pCmdline) {
     pid_t pid;
     /* l->seq[0] is the first command and l->seq[1] is the second if a pipe is used */
     int status = 0;
@@ -101,15 +137,17 @@ void execCommands(struct cmdline *l) {
             printf("/!\\ FORK FAILED /!\\\n");
             break;
         case 0:
-            setpgid(pid, 0);
-            if (strcmp(*l->seq[0], "jobs") == 0) {
-                execJobs(pid);
+//            setpgid(pid, 0);
+            if (strcmp(*pCmdline->seq[0], "jobs") == 0) {
+                exec_jobs();
+            } else if (strcmp(*pCmdline->seq[0], "exit") == 0) {
+                exit(0);
             } else {
-                execvp(*(l->seq[0]), *(l->seq));
+                status = execvp(*(pCmdline->seq[0]), *(pCmdline->seq));
                 if (status < 0) {
-                    printf("/!\\ command {%s} not found /!\\\n", *(l->seq[0]));
+                    printf("/!\\ command %s not found /!\\\n", *(pCmdline->seq[0]));
                 } else {
-                    printf("Executed %s with return code %d\n", *(l->seq[0]), status);
+                    printf("Executed %s with return code %d\n", *(pCmdline->seq[0]), status);
                     perror("/!\\ ERROR /!\\");
                 }
                 exit(1);
@@ -120,18 +158,15 @@ void execCommands(struct cmdline *l) {
             /* Ignore dead children */
             /* Temporary workaround before implementing SIGCHLD handler */
             signal(SIGCHLD, SIG_IGN);
-            if (!l->bg) {
+            if (!pCmdline->bg) {
                 waitpid(pid, 0, 0);
             } else {
-                waitpid(-1, &status, WNOHANG);
-                jobs[jobs_index] = pid;
-                jobs_index++;
-                if (WIFEXITED (status))
-                    printf("Exited with code %d\n", WEXITSTATUS (status));
+                exec_background(pid, *pCmdline->seq[0]);
             }
             break;
     }
 }
+
 
 int main() {
     printf("Variante %d: %s\n", VARIANTE, VARIANTE_STRING);
@@ -184,22 +219,22 @@ int main() {
         }
 
         /* Execute commands */
-        execCommands(l);
+        exec_commands(l);
 
         /* Check if any children process are done to remove them from jobs */
-        pid_t deadPid;
-        int deadStatus;
-        while ((deadPid = waitpid(-1, &deadStatus, WNOHANG)) > 0) {
-            printf("[proc %d exited with code %d]\n",
-                   deadPid, WEXITSTATUS(deadStatus));
-            /* here you can remove the pid from your jobs list */
-            for (int i = 0; i < 10; i++) {
-                if (jobs[i] == deadPid) {
-                    jobs[i] = -1;
-                    jobs_index--;
-                }
-            }
-        }
+//        pid_t deadPid;
+//        int deadStatus;
+//        while ((deadPid = waitpid(-1, &deadStatus, WNOHANG)) > 0) {
+//            printf("[proc %d exited with code %d]\n",
+//                   deadPid, WEXITSTATUS(deadStatus));
+//            /* here you can remove the pid from your jobs list */
+//            for (int i = 0; i < 10; i++) {
+//                if (jobs[i] == deadPid) {
+//                    jobs[i] = -1;
+//                    jobs_index--;
+//                }
+//            }
+//        }
 
         if (l->err) {
             /* Syntax error, read another command */
