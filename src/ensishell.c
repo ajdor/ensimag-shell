@@ -112,8 +112,8 @@ void exec_jobs() {
             } else {
                 prev->next = current->next;
             }
-            current = current->next;
             free(current);
+            current = current->next;
         } else {
             printf("\t[JOB STATUS] pid: %d, status: %d\n", current->pid, status);
         }
@@ -152,9 +152,11 @@ void exec_commands(struct cmdline *pCmdline) {
             /* Child section */
             if (strcmp(*pCmdline->seq[0], "exit") == 0) {
                 exit(0);
-            } else if (strcmp(*pCmdline->seq[0], "jobs") == 0) {
+            }
+            else if (strcmp(*pCmdline->seq[0], "jobs") == 0) {
                 exec_jobs();
-            } else {
+            }
+            else {
                 if (pCmdline->seq[1]) {
                     status = exec_pipe(pCmdline);
                 } else {
@@ -173,6 +175,9 @@ void exec_commands(struct cmdline *pCmdline) {
             /* Ignore dead children */
             /* Temporary workaround before implementing SIGCHLD handler */
             signal(SIGCHLD, SIG_IGN);
+//            if (strcmp(*pCmdline->seq[0], "jobs") == 0) {
+//                exec_jobs();
+//            }
             if (!pCmdline->bg) {
                 do {
                     waitpid(pid, &status, WUNTRACED);
