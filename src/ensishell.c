@@ -95,7 +95,7 @@ void exec_background(pid_t pid, char *cmd) {
 void exec_jobs() {
     /* Return nothing if no background job is running */
     if (background_jobs == NULL) {
-        printf("no backgrounds jobs are running\n");
+        printf("no background job running\n");
         return;
     }
 
@@ -110,10 +110,11 @@ void exec_jobs() {
             prev = current;
             current = current->next;
         } else if (status == -1) {
-            if (background_jobs != current) {
-                prev->next = current->next;
-            } else {
+            /* The process to remove is at the beginning of the list*/
+            if (background_jobs == current) {
                 background_jobs = current->next;
+            } else {
+                prev->next = current->next;
             }
             current = current->next;
             free(current);
@@ -124,7 +125,7 @@ void exec_jobs() {
 
     /* In case the jobs list is emptied when checking for dead processes */
     if (background_jobs == NULL) {
-        printf("no backgrounds jobs are running\n");
+        printf("no background job running\n");
     }
 }
 
@@ -159,7 +160,9 @@ void exec_commands(struct cmdline *pCmdline) {
             /* Temporary workaround before implementing SIGCHLD handler */
             signal(SIGCHLD, SIG_IGN);
             if (!pCmdline->bg) {
-                waitpid(pid, 0, 0);
+                do {
+                    waitpid(pid, &status, WUNTRACED);
+                } while (!WIFEXITED(status) && !WIFSIGNALED(status));
             } else {
                 exec_background(pid, *pCmdline->seq[0]);
             }
