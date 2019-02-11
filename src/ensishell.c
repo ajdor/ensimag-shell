@@ -28,17 +28,6 @@
 
 #include <libguile.h>
 
-typedef struct jobs {
-    pid_t pid;
-    char *cmd;
-    struct jobs *next;
-} jobs;
-
-int verbose = 0;
-static jobs *background_jobs = NULL;
-
-int exec_pipe(struct cmdline *pCmdline);
-
 int question6_executer(char *line) {
     /* Question 6: Insert your code to execute the command line
      * identically to the standard execution scheme:
@@ -59,7 +48,6 @@ SCM executer_wrapper(SCM x) {
 
 #endif
 
-
 void terminate(char *line) {
 #if USE_GNU_READLINE == 1
     /* rl_clear_history() does not exist yet in centOS 6 */
@@ -72,22 +60,31 @@ void terminate(char *line) {
 }
 
 
+typedef struct jobs {
+    pid_t pid;
+    char *cmd;
+    struct jobs *next;
+} jobs;
+
+int verbose = 0;
+static jobs *background_jobs = NULL;
+
+int exec_pipe(struct cmdline *pCmdline);
+
+
 void exec_background(pid_t pid, char *cmd) {
     int status;
     /* Execute process in background */
     waitpid(pid, &status, WNOHANG);
-    /* Add the process to the background jobs if doesn't return immediately */
-    if (WIFEXITED (status)) {
-        printf("Exited with code %d\n", WEXITSTATUS (status));
-    } else {
-        jobs *new_job = malloc(sizeof(jobs));
-        new_job->pid = pid;
-        /* Initialize to the size of the command's name */
-        new_job->cmd= (char *) malloc(sizeof(cmd)+1);
-        strcpy(new_job->cmd, cmd);
-        new_job->next = background_jobs;
-        background_jobs = new_job;
-    }
+
+    /* Add process to the background jobs list*/
+    jobs *new_job = malloc(sizeof(jobs));
+    new_job->pid = pid;
+    /* Initialize to the size of the command's name */
+    new_job->cmd = (char *) malloc(sizeof(cmd) + 1);
+    strcpy(new_job->cmd, cmd);
+    new_job->next = background_jobs;
+    background_jobs = new_job;
 }
 
 void exec_jobs() {
@@ -153,11 +150,9 @@ void exec_commands(struct cmdline *pCmdline) {
             /* Child section */
             if (strcmp(*pCmdline->seq[0], "exit") == 0) {
                 exit(0);
-            }
-            else if (strcmp(*pCmdline->seq[0], "jobs") == 0) {
+            } else if (strcmp(*pCmdline->seq[0], "jobs") == 0) {
                 exec_jobs();
-            }
-            else {
+            } else {
                 if (pCmdline->seq[1]) {
                     status = exec_pipe(pCmdline);
                 } else {
