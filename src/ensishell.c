@@ -82,8 +82,9 @@ void exec_background(pid_t pid, char *cmd) {
     } else {
         jobs *new_job = malloc(sizeof(jobs));
         new_job->pid = pid;
-        /* Weird behaviour */
-        new_job->cmd = cmd;
+        /* Initialize to the size of the command's name */
+        new_job->cmd= (char *) malloc(sizeof(cmd)+1);
+        strcpy(new_job->cmd, cmd);
         new_job->next = background_jobs;
         background_jobs = new_job;
     }
@@ -102,7 +103,7 @@ void exec_jobs() {
     do {
         status = kill(current->pid, 0);
         if (status == 0) {
-            printf("[JOB] pid: %d\n", current->pid);
+            printf("[JOB] pid: %d, cmd: %s\n", current->pid, current->cmd);
             prev = current;
             current = current->next;
         } else if (status == -1) {
@@ -175,9 +176,6 @@ void exec_commands(struct cmdline *pCmdline) {
             /* Ignore dead children */
             /* Temporary workaround before implementing SIGCHLD handler */
             signal(SIGCHLD, SIG_IGN);
-//            if (strcmp(*pCmdline->seq[0], "jobs") == 0) {
-//                exec_jobs();
-//            }
             if (!pCmdline->bg) {
                 do {
                     waitpid(pid, &status, WUNTRACED);
