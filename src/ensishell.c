@@ -125,17 +125,22 @@ void exec_jobs() {
 
 int exec_pipe(struct cmdline *pCmdline) {
     int pipe_descriptor[2];
-    pipe(pipe_descriptor);
-    if (fork() == 0) {
-        dup2(pipe_descriptor[0], 0);
-        close(pipe_descriptor[1]);
+    int pipe_status = pipe(pipe_descriptor);
+    if(pipe_status == -1){
+        perror("Pipe has failed");
+        return -1;
+    }else{
+        if (fork() == 0) {
+            dup2(pipe_descriptor[0], 0);
+            close(pipe_descriptor[1]);
+            close(pipe_descriptor[0]);
+            execvp(*(pCmdline->seq[1]), *(pCmdline->seq + 1));
+        }
+        dup2(pipe_descriptor[1], 1);
         close(pipe_descriptor[0]);
-        execvp(*(pCmdline->seq[1]), *(pCmdline->seq + 1));
+        close(pipe_descriptor[1]);
+        return execvp(*(pCmdline->seq[0]), *(pCmdline->seq));
     }
-    dup2(pipe_descriptor[1], 1);
-    close(pipe_descriptor[0]);
-    close(pipe_descriptor[1]);
-    return execvp(*(pCmdline->seq[0]), *(pCmdline->seq));
 }
 
 void exec_commands(struct cmdline *pCmdline) {
