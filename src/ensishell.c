@@ -146,9 +146,31 @@ int exec_pipe(struct cmdline *pCmdline) {
     }
 }
 
+void exec_stdin(struct cmdline *pCmdline){
+    int in_fd = open(pCmdline->in, O_RDONLY);
+    if (in_fd < 0) {
+        printf("/!\\ file %s does not exist or could not be opened /!\\\n", pCmdline->in);
+        return;
+    }
+    close(0);
+    dup(in_fd);
+    close(in_fd);
+}
+
+void exec_stdout(struct cmdline *pCmdline){
+    int out_fd = creat(pCmdline->out, 0644);
+    if (out_fd < 0) {
+        printf("/!\\ file %s could not be opened /!\\\n", pCmdline->out);
+        return;
+    }
+    close(1);
+    dup(out_fd);
+    close(out_fd);
+}
+
 void exec_commands(struct cmdline *pCmdline) {
-    pid_t pid;
     /* pCmdline->seq[0] is the first command and pCmdline->seq[1] is the second if a pipe is used */
+    pid_t pid;
     int status = 0;
     switch (pid = fork()) {
         case -1:
@@ -158,27 +180,14 @@ void exec_commands(struct cmdline *pCmdline) {
             /* Child section */
             if (pCmdline->in) {
                 /* stdin redirection */
-                int in_fd = open(pCmdline->in, O_RDONLY);
-                if (in_fd < 0) {
-                    printf("/!\\ file %s does not exist or could not be opened /!\\\n", pCmdline->in);
-                    return;
-                }
-                close(0);
-                dup(in_fd);
-                close(in_fd);
+                exec_stdin(pCmdline);
             }
             if (pCmdline->out) {
                 /* stdout redirection */
-                int out_fd = creat(pCmdline->out, 0644);
-                if (out_fd < 0) {
-                    printf("/!\\ file %s could not be opened /!\\\n", pCmdline->in);
-                    return;
-                }
-                close(1);
-                dup(out_fd);
-                close(out_fd);
+                exec_stdout(pCmdline);
             }
 
+            /* Special commands */
             if (strcmp(*pCmdline->seq[0], "exit") == 0) {
                 exit(0);
             } else if (strcmp(*pCmdline->seq[0], "jobs") == 0) {
@@ -190,7 +199,9 @@ void exec_commands(struct cmdline *pCmdline) {
                 } else {
                     printf("/!\\ QUIET /!\\\n");
                 }
-            } else {
+            }
+            /* Regular commands */
+            else {
                 if (pCmdline->seq[1]) {
                     status = exec_pipe(pCmdline);
                 } else {
