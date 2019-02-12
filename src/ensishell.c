@@ -55,7 +55,7 @@ void terminate(char *line) {
 #endif
     if (line)
         free(line);
-    printf("thanks for you using ensishell :)\n");
+    printf("thanks for using ensishell :)\n");
     exit(0);
 }
 
@@ -126,10 +126,10 @@ void exec_jobs() {
 int exec_pipe(struct cmdline *pCmdline) {
     int pipe_descriptor[2];
     int pipe_status = pipe(pipe_descriptor);
-    if(pipe_status == -1){
+    if (pipe_status == -1) {
         perror("Pipe has failed");
         return -1;
-    }else{
+    } else {
         if (fork() == 0) {
             dup2(pipe_descriptor[0], 0);
             close(pipe_descriptor[1]);
@@ -145,7 +145,7 @@ int exec_pipe(struct cmdline *pCmdline) {
 
 void exec_commands(struct cmdline *pCmdline) {
     pid_t pid;
-    /* l->seq[0] is the first command and l->seq[1] is the second if a pipe is used */
+    /* pCmdline->seq[0] is the first command and pCmdline->seq[1] is the second if a pipe is used */
     int status = 0;
     switch (pid = fork()) {
         case -1:
@@ -153,10 +153,26 @@ void exec_commands(struct cmdline *pCmdline) {
             break;
         case 0:
             /* Child section */
+            if (pCmdline->in && pCmdline->out) {
+                /* In and out && out and it, just like the simulations */
+            } else if (pCmdline->in) {
+//                int in_fd = open()
+            } else if (pCmdline->out) {
+//                int out_fd;
+
+            }
+
             if (strcmp(*pCmdline->seq[0], "exit") == 0) {
                 exit(0);
             } else if (strcmp(*pCmdline->seq[0], "jobs") == 0) {
                 exec_jobs();
+            } else if (strcmp(*pCmdline->seq[0], "v") == 0) {
+                verbose = !verbose;
+                if (verbose) {
+                    printf("/!\\ VERBOSE /!\\\n");
+                } else {
+                    printf("/!\\ QUIET /!\\\n");
+                }
             } else {
                 if (pCmdline->seq[1]) {
                     status = exec_pipe(pCmdline);
