@@ -10,6 +10,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 
 #include "variante.h"
 #include "readcmd.h"
@@ -66,7 +67,9 @@ typedef struct jobs {
     struct jobs *next;
 } jobs;
 
+/* Verbose mode is OFF by default */
 int verbose = 0;
+
 static jobs *background_jobs = NULL;
 
 int exec_pipe(struct cmdline *pCmdline);
@@ -156,10 +159,17 @@ void exec_commands(struct cmdline *pCmdline) {
             if (pCmdline->in && pCmdline->out) {
                 /* In and out && out and it, just like the simulations */
             } else if (pCmdline->in) {
-//                int in_fd = open()
+                /* stdin redirection */
+                int in_fd = open(pCmdline->in, O_RDONLY);
+                close(0);
+                dup(in_fd);
+                close(in_fd);
             } else if (pCmdline->out) {
-//                int out_fd;
-
+                /* stdout redirection */
+                int out_fd = creat(pCmdline->out, 0644);
+                close(1);
+                dup(out_fd);
+                close(out_fd);
             }
 
             if (strcmp(*pCmdline->seq[0], "exit") == 0) {
