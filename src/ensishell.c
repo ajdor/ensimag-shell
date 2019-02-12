@@ -156,17 +156,24 @@ void exec_commands(struct cmdline *pCmdline) {
             break;
         case 0:
             /* Child section */
-            if (pCmdline->in && pCmdline->out) {
-                /* In and out && out and it, just like the simulations */
-            } else if (pCmdline->in) {
+            if (pCmdline->in) {
                 /* stdin redirection */
                 int in_fd = open(pCmdline->in, O_RDONLY);
+                if (in_fd < 0) {
+                    printf("/!\\ file %s does not exist or could not be opened /!\\\n", pCmdline->in);
+                    return;
+                }
                 close(0);
                 dup(in_fd);
                 close(in_fd);
-            } else if (pCmdline->out) {
+            }
+            if (pCmdline->out) {
                 /* stdout redirection */
                 int out_fd = creat(pCmdline->out, 0644);
+                if (out_fd < 0) {
+                    printf("/!\\ file %s could not be opened /!\\\n", pCmdline->in);
+                    return;
+                }
                 close(1);
                 dup(out_fd);
                 close(out_fd);
