@@ -58,6 +58,7 @@ void terminate(char *line) {
         free(line);
     printf("thanks for using ensishell :)\n");
     exit(0);
+//    while(1) exit(0);
 }
 
 
@@ -103,11 +104,12 @@ void exec_jobs() {
     do {
         status = kill(current->pid, 0);
         if (status == 0) {
-            printf("[JOB] pid: %d, cmd: %s\n", current->pid, current->cmd);
+            printf("[JOB] RUNNING pid: %d, cmd: %s\n", current->pid, current->cmd);
             prev = current;
             current = current->next;
         } else if (status == -1) {
             /* The process to remove is at the beginning of the list*/
+            printf("[JOB] DONE pid: %d, cmd: %s\n", current->pid, current->cmd);
             if (background_jobs == current) {
                 background_jobs = current->next;
             } else {
@@ -146,7 +148,7 @@ int exec_pipe(struct cmdline *pCmdline) {
     }
 }
 
-void exec_stdin(struct cmdline *pCmdline){
+void exec_stdin(struct cmdline *pCmdline) {
     int in_fd = open(pCmdline->in, O_RDONLY);
     if (in_fd < 0) {
         printf("/!\\ file %s does not exist or could not be opened /!\\\n", pCmdline->in);
@@ -157,7 +159,7 @@ void exec_stdin(struct cmdline *pCmdline){
     close(in_fd);
 }
 
-void exec_stdout(struct cmdline *pCmdline){
+void exec_stdout(struct cmdline *pCmdline) {
     int out_fd = creat(pCmdline->out, 0644);
     if (out_fd < 0) {
         printf("/!\\ file %s could not be opened /!\\\n", pCmdline->out);
@@ -200,7 +202,7 @@ void exec_commands(struct cmdline *pCmdline) {
                     printf("/!\\ QUIET /!\\\n");
                 }
             }
-            /* Regular commands */
+                /* Regular commands */
             else {
                 if (pCmdline->seq[1]) {
                     status = exec_pipe(pCmdline);
@@ -214,6 +216,9 @@ void exec_commands(struct cmdline *pCmdline) {
                     perror("/!\\ ERROR /!\\");
                 }
             }
+            /* This section is never reached by regular execvp commands, it's only used for special commands such as
+             * exit, jobs and v to return to the parent process when they're done */
+            exit(0);
             break;
         default:
             /* Parent section */
