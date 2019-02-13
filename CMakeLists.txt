@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 if(COMMAND cmake_policy)
-  cmake_policy(SET CMP0003 NEW)
+    cmake_policy(SET CMP0003 NEW)
 endif(COMMAND cmake_policy)
 
 project(Ensishell)
@@ -12,10 +12,10 @@ enable_testing()
 #######
 execute_process(COMMAND gem which minitest RESULT_VARIABLE GEM_MINITEST)
 if (NOT ${GEM_MINITEST} EQUAL 0)
-  execute_process(COMMAND gem install minitest RESULT_VARIABLE GEM_MINITEST_INSTALL)
-  if (NOT ${GEM_MINITEST_INSTALL} EQUAL 0)
-    message(FATAL_ERROR "Ruby: gem: minitest unavailable and uninstallable")
-  endif ()
+    execute_process(COMMAND gem install minitest RESULT_VARIABLE GEM_MINITEST_INSTALL)
+    if (NOT ${GEM_MINITEST_INSTALL} EQUAL 0)
+        message(FATAL_ERROR "Ruby: gem: minitest unavailable and uninstallable")
+    endif ()
 endif ()
 
 #######
@@ -29,23 +29,23 @@ execute_process(COMMAND pkg-config --libs guile-2.0 OUTPUT_VARIABLE GUILE_PKG_LD
 
 # Guile 1.8 if guile 2.0 is not available
 if ("${GUILE_PKG_LDFLAGS}" STREQUAL "")
-  execute_process(COMMAND pkg-config --cflags guile-1.8 OUTPUT_VARIABLE GUILE_PKG_CFLAGS)
-  execute_process(COMMAND pkg-config --libs guile-1.8 OUTPUT_VARIABLE GUILE_PKG_LDFLAGS)
+    execute_process(COMMAND pkg-config --cflags guile-1.8 OUTPUT_VARIABLE GUILE_PKG_CFLAGS)
+    execute_process(COMMAND pkg-config --libs guile-1.8 OUTPUT_VARIABLE GUILE_PKG_LDFLAGS)
 endif()
 
 # aucun Guile n'a été trouvé
 if (NOT "${GUILE_PKG_LDFLAGS}" STREQUAL "")
-  set(USE_GUILE 1)
-  string(STRIP ${GUILE_PKG_CFLAGS} GUILE_CFLAGS)
-  string(STRIP ${GUILE_PKG_LDFLAGS} GUILE_LDFLAGS)
+    set(USE_GUILE 1)
+    string(STRIP ${GUILE_PKG_CFLAGS} GUILE_CFLAGS)
+    string(STRIP ${GUILE_PKG_LDFLAGS} GUILE_LDFLAGS)
 
-  # Ensimag debug: if libltld.so is required but not there, put explicit path
-  find_library(LIBLTDL ltdl)
-  if (${GUILE_LDFLAGS} MATCHES "-lltdl" AND NOT ${LIBLTDL})
-    string(REPLACE "-lltdl" "/usr/lib64/libltdl.so.7" GUILE_LDFLAGS ${GUILE_LDFLAGS})
-  endif()
+    # Ensimag debug: if libltld.so is required but not there, put explicit path
+    find_library(LIBLTDL ltdl)
+    if (${GUILE_LDFLAGS} MATCHES "-lltdl" AND NOT ${LIBLTDL})
+        string(REPLACE "-lltdl" "/usr/lib64/libltdl.so.7" GUILE_LDFLAGS ${GUILE_LDFLAGS})
+    endif()
 else()
-  set(USE_GUILE 0)
+    set(USE_GUILE 0)
 endif()
 
 ####
@@ -53,11 +53,11 @@ endif()
 ####
 find_path(READLINE_PATH "include/readline/readline.h")
 if (NOT "${READLINE_PATH}" STREQUAL "")
-  set(USE_GNU_READLINE 1)
-  set(READLINE_LDFLAGS readline history)
+    set(USE_GNU_READLINE 1)
+    set(READLINE_LDFLAGS readline history)
 else()
-  set(USE_GNU_READLINE 0)
-  set(READLINE_LDFLAGS)
+    set(USE_GNU_READLINE 0)
+    set(READLINE_LDFLAGS)
 endif()
 
 
@@ -77,15 +77,15 @@ set(VARIANTE_SUJET 0)
 ###
 list(SORT VARIANTE_LOGINS)
 if (VARIANTE_LOGINS MATCHES "login[123]")
-  message(FATAL_ERROR "** ERREUR **: Vous devez modifier CMakeLists.txt pour y mettre vos logins")
+    message(FATAL_ERROR "** ERREUR **: Vous devez modifier CMakeLists.txt pour y mettre vos logins")
 endif()
 if (VARIANTE_SUJET EQUAL -1)
-  message(FATAL_ERROR "** ERREUR **: Vous devez modifier CMakeLists.txt pour y mettre le numéro de votre variante du sujet")
+    message(FATAL_ERROR "** ERREUR **: Vous devez modifier CMakeLists.txt pour y mettre le numéro de votre variante du sujet")
 endif()
 
 configure_file (
-  src/variante.h.in
-  ${CMAKE_SOURCE_DIR}/src/variante.h
+        src/variante.h.in
+        ${CMAKE_SOURCE_DIR}/src/variante.h
 )
 
 #########
@@ -118,9 +118,9 @@ set(CPACK_PACKAGE_VERSION_MINOR "0")
 set(CPACK_PACKAGE_VERSION_PATCH ${LOGINS_SANS_POINTVIRGULE})
 set(CPACK_SOURCE_GENERATOR "TGZ")
 set(CPACK_SOURCE_IGNORE_FILES
-  "~$"
-  "\\\\.o$"
-  "^${PROJECT_SOURCE_DIR}/build/"
-  "^${PROJECT_SOURCE_DIR}/.git/"
-)
+        "~$"
+        "\\\\.o$"
+        "^${PROJECT_SOURCE_DIR}/build/"
+        "^${PROJECT_SOURCE_DIR}/.git/"
+        )
 include(CPack)

@@ -58,7 +58,6 @@ void terminate(char *line) {
         free(line);
     printf("thanks for using ensishell :)\n");
     exit(0);
-//    while(1) exit(0);
 }
 
 
@@ -73,8 +72,10 @@ int verbose = 0;
 
 static jobs *background_jobs = NULL;
 
-int exec_pipe(struct cmdline *pCmdline);
+void exec_pipe(struct cmdline *pCmdline);
 
+
+void toggle_verbose();
 
 void exec_background(pid_t pid, char *cmd) {
     int status;
@@ -95,7 +96,7 @@ void exec_jobs() {
     /* Return nothing if no background job is running */
     if (background_jobs == NULL) {
         printf("no background job running\n");
-        return;
+        exit(0);
     }
 
     int status;
@@ -109,12 +110,13 @@ void exec_jobs() {
             current = current->next;
         } else if (status == -1) {
             /* The process to remove is at the beginning of the list*/
-            printf("[JOB] DONE pid: %d, cmd: %s\n", current->pid, current->cmd);
             if (background_jobs == current) {
                 background_jobs = current->next;
+                prev = background_jobs;
             } else {
-                prev->next = current->next;
+                prev->next = prev->next->next;
             }
+            free(current->cmd);
             free(current);
             current = current->next;
         } else {
@@ -126,25 +128,23 @@ void exec_jobs() {
     if (background_jobs == NULL) {
         printf("no background job running\n");
     }
+    exit(0);
 }
 
-int exec_pipe(struct cmdline *pCmdline) {
+void exec_pipe(struct cmdline *pCmdline) {
     int pipe_descriptor[2];
     int pipe_status = pipe(pipe_descriptor);
     if (pipe_status == -1) {
         perror("Pipe has failed");
-        return -1;
     } else {
         if (fork() == 0) {
             dup2(pipe_descriptor[0], 0);
             close(pipe_descriptor[1]);
-            close(pipe_descriptor[0]);
             execvp(*(pCmdline->seq[1]), *(pCmdline->seq + 1));
         }
         dup2(pipe_descriptor[1], 1);
         close(pipe_descriptor[0]);
-        close(pipe_descriptor[1]);
-        return execvp(*(pCmdline->seq[0]), *(pCmdline->seq));
+        execvp(*(pCmdline->seq[0]), *(pCmdline->seq));
     }
 }
 
@@ -195,45 +195,43 @@ void exec_commands(struct cmdline *pCmdline) {
             } else if (strcmp(*pCmdline->seq[0], "jobs") == 0) {
                 exec_jobs();
             } else if (strcmp(*pCmdline->seq[0], "v") == 0) {
-                verbose = !verbose;
-                if (verbose) {
-                    printf("/!\\ VERBOSE /!\\\n");
-                } else {
-                    printf("/!\\ QUIET /!\\\n");
-                }
+                toggle_verbose();
             }
                 /* Regular commands */
             else {
                 if (pCmdline->seq[1]) {
-                    status = exec_pipe(pCmdline);
+                    exec_pipe(pCmdline);
                 } else {
                     status = execvp(*(pCmdline->seq[0]), *(pCmdline->seq));
-                }
-                if (status < 0) {
-                    printf("/!\\ command %s not found /!\\\n", *(pCmdline->seq[0]));
-                } else {
-                    printf("Executed %s with return code %d\n", *(pCmdline->seq[0]), status);
-                    perror("/!\\ ERROR /!\\");
+                    if (status == -1) {
+                        printf("/!\\ command %s not found /!\\\n", *(pCmdline->seq[0]));
+                        exit(0);
+                    }
                 }
             }
-            /* This section is never reached by regular execvp commands, it's only used for special commands such as
-             * exit, jobs and v to return to the parent process when they're done */
-            exit(0);
             break;
         default:
             /* Parent section */
-            /* Ignore dead children */
-            /* Temporary workaround before implementing SIGCHLD handler */
-            signal(SIGCHLD, SIG_IGN);
             if (!pCmdline->bg) {
-                do {
-                    waitpid(pid, &status, WUNTRACED);
-                } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+                waitpid(pid, &status, 0);
             } else {
+                /* Ignore dead children */
+                /* Temporary workaround before implementing SIGCHLD handler */
+                signal(SIGCHLD, SIG_IGN);
                 exec_background(pid, *pCmdline->seq[0]);
             }
             break;
     }
+}
+
+void toggle_verbose() {
+    verbose = !verbose;
+    if (verbose) {
+        printf("/!\\ VERBOSE /!\\\n");
+    } else {
+        printf("/!\\ QUIET /!\\\n");
+    }
+    exit(0);
 }
 
 

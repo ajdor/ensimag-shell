@@ -19,10 +19,10 @@ Spécificités de ce squelette:
 Compilation et lancement des tests
 ----------
 
-cd ensimag-shell
-cd build
-cmake ..
-make
+cd ensimag-shell\
+cd build\
+cmake ..\
+make\
 make test
 
 
