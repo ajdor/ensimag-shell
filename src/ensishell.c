@@ -10,6 +10,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 
 #include "variante.h"
 #include "readcmd.h"
@@ -55,8 +56,9 @@ void terminate(char *line) {
 #endif
     if (line)
         free(line);
-    printf("thanks for you using ensishell :)\n");
+    printf("thanks for using ensishell :)\n");
     exit(0);
+//    while(1) exit(0);
 }
 
 
@@ -66,7 +68,9 @@ typedef struct jobs {
     struct jobs *next;
 } jobs;
 
+/* Verbose mode is OFF by default */
 int verbose = 0;
+
 static jobs *background_jobs = NULL;
 
 int exec_pipe(struct cmdline *pCmdline);
@@ -100,11 +104,12 @@ void exec_jobs() {
     do {
         status = kill(current->pid, 0);
         if (status == 0) {
-            printf("[JOB] pid: %d, cmd: %s\n", current->pid, current->cmd);
+            printf("[JOB] RUNNING pid: %d, cmd: %s\n", current->pid, current->cmd);
             prev = current;
             current = current->next;
         } else if (status == -1) {
             /* The process to remove is at the beginning of the list*/
+            printf("[JOB] DONE pid: %d, cmd: %s\n", current->pid, current->cmd);
             if (background_jobs == current) {
                 background_jobs = current->next;
             } else {
@@ -126,10 +131,10 @@ void exec_jobs() {
 int exec_pipe(struct cmdline *pCmdline) {
     int pipe_descriptor[2];
     int pipe_status = pipe(pipe_descriptor);
-    if(pipe_status == -1){
+    if (pipe_status == -1) {
         perror("Pipe has failed");
         return -1;
-    }else{
+    } else {
         if (fork() == 0) {
             dup2(pipe_descriptor[0], 0);
             close(pipe_descriptor[1]);
@@ -143,9 +148,31 @@ int exec_pipe(struct cmdline *pCmdline) {
     }
 }
 
+void exec_stdin(struct cmdline *pCmdline) {
+    int in_fd = open(pCmdline->in, O_RDONLY);
+    if (in_fd < 0) {
+        printf("/!\\ file %s does not exist or could not be opened /!\\\n", pCmdline->in);
+        return;
+    }
+    close(0);
+    dup(in_fd);
+    close(in_fd);
+}
+
+void exec_stdout(struct cmdline *pCmdline) {
+    int out_fd = creat(pCmdline->out, 0644);
+    if (out_fd < 0) {
+        printf("/!\\ file %s could not be opened /!\\\n", pCmdline->out);
+        return;
+    }
+    close(1);
+    dup(out_fd);
+    close(out_fd);
+}
+
 void exec_commands(struct cmdline *pCmdline) {
+    /* pCmdline->seq[0] is the first command and pCmdline->seq[1] is the second if a pipe is used */
     pid_t pid;
-    /* l->seq[0] is the first command and l->seq[1] is the second if a pipe is used */
     int status = 0;
     switch (pid = fork()) {
         case -1:
@@ -153,11 +180,30 @@ void exec_commands(struct cmdline *pCmdline) {
             break;
         case 0:
             /* Child section */
+            if (pCmdline->in) {
+                /* stdin redirection */
+                exec_stdin(pCmdline);
+            }
+            if (pCmdline->out) {
+                /* stdout redirection */
+                exec_stdout(pCmdline);
+            }
+
+            /* Special commands */
             if (strcmp(*pCmdline->seq[0], "exit") == 0) {
                 exit(0);
             } else if (strcmp(*pCmdline->seq[0], "jobs") == 0) {
                 exec_jobs();
-            } else {
+            } else if (strcmp(*pCmdline->seq[0], "v") == 0) {
+                verbose = !verbose;
+                if (verbose) {
+                    printf("/!\\ VERBOSE /!\\\n");
+                } else {
+                    printf("/!\\ QUIET /!\\\n");
+                }
+            }
+                /* Regular commands */
+            else {
                 if (pCmdline->seq[1]) {
                     status = exec_pipe(pCmdline);
                 } else {
@@ -170,6 +216,9 @@ void exec_commands(struct cmdline *pCmdline) {
                     perror("/!\\ ERROR /!\\");
                 }
             }
+            /* This section is never reached by regular execvp commands, it's only used for special commands such as
+             * exit, jobs and v to return to the parent process when they're done */
+            exit(0);
             break;
         default:
             /* Parent section */
