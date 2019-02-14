@@ -74,6 +74,9 @@ static jobs *background_jobs = NULL;
 
 void exec_pipe(struct cmdline *pCmdline);
 
+void exec_stdin(struct cmdline *pCmdline);
+
+void exec_stdout(struct cmdline *pCmdline);
 
 void toggle_verbose();
 
@@ -96,7 +99,7 @@ void exec_jobs() {
     /* Return nothing if no background job is running */
     if (background_jobs == NULL) {
         printf("no background job running\n");
-        exit(0);
+        return;
     }
 
     int status;
@@ -110,6 +113,7 @@ void exec_jobs() {
             current = current->next;
         } else if (status == -1) {
             /* The process to remove is at the beginning of the list*/
+            printf("[JOB] DONE pid: %d, cmd: %s\n", current->pid, current->cmd);
             if (background_jobs == current) {
                 background_jobs = current->next;
                 prev = background_jobs;
@@ -128,24 +132,71 @@ void exec_jobs() {
     if (background_jobs == NULL) {
         printf("no background job running\n");
     }
-    exit(0);
 }
 
 void exec_pipe(struct cmdline *pCmdline) {
-    int pipe_descriptor[2];
-    int pipe_status = pipe(pipe_descriptor);
-    if (pipe_status == -1) {
-        perror("Pipe has failed");
-    } else {
-        if (fork() == 0) {
-            dup2(pipe_descriptor[0], 0);
-            close(pipe_descriptor[1]);
-            execvp(*(pCmdline->seq[1]), *(pCmdline->seq + 1));
+    /* Count the number of process/pipes to run */
+    int pipe_counter = 0;
+    while (pCmdline->seq[pipe_counter] != 0)
+        pipe_counter++;
+
+    /* Create a list of pipes long enough to run between the pipes */
+    int **pipe_descriptor = malloc((pipe_counter - 1) * sizeof(int *));
+    for (int i = 0; i < pipe_counter - 1; i++) {
+        pipe_descriptor[i] = malloc(sizeof(int));
+        /* Return if a fails */
+        if (pipe(pipe_descriptor[i]) == -1) {
+            perror("/!\\ Pipe failed /!\\\n");
+            return;
         }
-        dup2(pipe_descriptor[1], 1);
-        close(pipe_descriptor[0]);
-        execvp(*(pCmdline->seq[0]), *(pCmdline->seq));
     }
+
+    /* Fork for every pipe needed for the command */
+    pid_t pipe_pid = 1;
+    for (int i = 0; i < pipe_counter && pipe_pid; i++) {
+        pipe_pid = fork();
+        if (pipe_pid == 0) {
+            /* Pipe stdin if the current pipe isn't the first */
+            if (i != 0) { // Si on n'est pas le premier
+                dup2(pipe_descriptor[i - 1][0], STDIN_FILENO);
+            }
+            /* Pipe stdout if the current pipe isn't the last*/
+            if (i != pipe_counter - 1) {
+                dup2(pipe_descriptor[i][1], STDOUT_FILENO);
+            }
+
+            /* Close all children pipes */
+            for (int j = 0; j < pipe_counter - 1; j++) {
+                close(pipe_descriptor[j][0]);
+                close(pipe_descriptor[j][1]);
+            }
+
+            /* Exec the command and return an error if it fails*/
+            int exec_status = execvp(*(pCmdline->seq[i]), pCmdline->seq[i]);
+            if (exec_status == -1) {
+                perror("/!\\ Execvp failed /!\\\n");
+                return;
+            }
+        }
+    }
+
+    /* Close all parent pipes */
+    for (int j = 0; j < pipe_counter - 1; j++) {
+        close(pipe_descriptor[j][0]);
+        close(pipe_descriptor[j][1]);
+        free(pipe_descriptor[j]);
+    }
+    /* Free the whole thing once and for all*/
+    free(pipe_descriptor);
+
+    /* Wait for the children to finish before prompt */
+    for (int i = 0; i < pipe_counter; i++) {
+        wait(NULL);
+    }
+
+    /* Necessary exit since the piping is done from the child in the main function,
+     * moving it to the parent process breaks things */
+    exit(0);
 }
 
 void exec_stdin(struct cmdline *pCmdline) {
@@ -174,6 +225,8 @@ void exec_commands(struct cmdline *pCmdline) {
     /* pCmdline->seq[0] is the first command and pCmdline->seq[1] is the second if a pipe is used */
     pid_t pid;
     int status = 0;
+
+    /* Special commands */
     switch (pid = fork()) {
         case -1:
             printf("/!\\ FORK FAILED /!\\\n");
@@ -188,26 +241,16 @@ void exec_commands(struct cmdline *pCmdline) {
                 /* stdout redirection */
                 exec_stdout(pCmdline);
             }
-
-            /* Special commands */
-            if (strcmp(*pCmdline->seq[0], "exit") == 0) {
-                exit(0);
-            } else if (strcmp(*pCmdline->seq[0], "jobs") == 0) {
-                exec_jobs();
-            } else if (strcmp(*pCmdline->seq[0], "v") == 0) {
-                toggle_verbose();
+            if (pCmdline->seq[1]) {
+                /* pipe */
+                exec_pipe(pCmdline);
             }
-                /* Regular commands */
-            else {
-                if (pCmdline->seq[1]) {
-                    exec_pipe(pCmdline);
-                } else {
-                    status = execvp(*(pCmdline->seq[0]), *(pCmdline->seq));
-                    if (status == -1) {
-                        printf("/!\\ command %s not found /!\\\n", *(pCmdline->seq[0]));
-                        exit(0);
-                    }
-                }
+
+            /* Regular commands */
+            status = execvp(*(pCmdline->seq[0]), *(pCmdline->seq));
+            if (status == -1) {
+                printf("/!\\ command not found: %s /!\\\n", *(pCmdline->seq[0]));
+                exit(0);
             }
             break;
         default:
@@ -231,7 +274,6 @@ void toggle_verbose() {
     } else {
         printf("/!\\ QUIET /!\\\n");
     }
-    exit(0);
 }
 
 
@@ -286,7 +328,15 @@ int main() {
         }
 
         /* Execute commands */
-        exec_commands(l);
+        if (l->seq[0]) {
+            if (strcmp(*l->seq[0], "jobs") == 0) {
+                exec_jobs();
+            } else if (strcmp(*l->seq[0], "v") == 0) {
+                toggle_verbose();
+            } else {
+                exec_commands(l);
+            }
+        }
 
         if (l->err) {
             /* Syntax error, read another command */
