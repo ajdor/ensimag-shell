@@ -35,11 +35,10 @@ int question6_executer(char *line) {
      * parsecmd, then fork+execvp, for a single command.
      * pipe and i/o redirection are not required.
      */
-    printf("Not implemented yet: can not execute %s\n", line);
-
-    /* Remove this line when using parsecmd as it will free it */
-    free(line);
-
+    struct cmdline *l;
+    l = parsecmd(&line);
+    exec_commands(l);
+    // free(l);
     return 0;
 }
 
@@ -313,7 +312,6 @@ int main() {
                     "(catch #t (lambda () %s) (lambda (key . parameters) (display \"mauvaise expression/bug en scheme\n\")))",
                     line);
             scm_eval_string(scm_from_locale_string(catchligne));
-            free(line);
             continue;
         }
 #endif
