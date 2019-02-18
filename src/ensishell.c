@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <wordexp.h>
 
 #include "variante.h"
 #include "readcmd.h"
@@ -70,6 +71,8 @@ typedef struct jobs {
 int verbose = 0;
 
 static jobs *background_jobs = NULL;
+
+int parse_jokers(struct cmdline *pCmdline);
 
 void exec_pipe(struct cmdline *pCmdline);
 
@@ -221,6 +224,14 @@ void exec_stdout(struct cmdline *pCmdline) {
 }
 
 void exec_commands(struct cmdline *pCmdline) {
+    /* We start by extending the jokers */
+    int joker_status = parse_jokers(pCmdline);
+    if(joker_status){
+        /* extension has failed, so we exit */
+        perror("Extentsion has failed");
+        exit(0);
+    }
+    
     /* pCmdline->seq[0] is the first command and pCmdline->seq[1] is the second if a pipe is used */
     pid_t pid;
     int status = 0;
@@ -273,6 +284,51 @@ void toggle_verbose() {
     } else {
         printf("/!\\ QUIET /!\\\n");
     }
+}
+
+int parse_jokers(struct cmdline *pCmdline){
+/**
+ * Modify in place the pCmdline with extended calls.
+ * /
+
+    /* Expand the all the command lines for the program to run.  */
+    for(int i =0; pCmdline->seq[i] != NULL; i++){
+        wordexp_t result;
+        /* I think we have to call it once before using WRDE_APPEND */
+        switch (wordexp (pCmdline->seq[i][0], &result, 0)){
+                case 0:			/* Successful.  */
+                    break;
+                case WRDE_NOSPACE:
+                    /* If the error was WRDE_NOSPACE,
+                    then perhaps part of the result was allocated.  */
+                    wordfree (&result);
+                    perror("Extension has failed");
+                    return -1;
+                default:                    /* Some other error.  */
+                    return -1;
+        }
+        for(int j=1; pCmdline->seq[i][j] != NULL; j++){
+              /* Expand the string for the program to run.  */
+            if (wordexp (pCmdline->seq[i][j], &result, WRDE_APPEND))
+            {
+                /* there should be errors handling */
+                wordfree (&result);
+                return -1;
+            }
+        }
+        // pCmdline->seq[i] = result.we_wordc;
+        /* We need to copy the results into the command line */
+        char **p = malloc(sizeof(char *)*result.we_wordc);
+        for(int j = 0; j < result.we_wordc; j++){
+            /* We need to allocate for the size of the word + 1 
+            for the null terminating char */  
+            char *word = malloc((strlen(result.we_wordv[j])+1)*(sizeof(char)));
+            strncpy(word, result.we_wordv[j], strlen(result.we_wordv[j])+1);
+            p[j] = word;
+        }
+        pCmdline->seq[i] = p;
+    }
+    return 0;
 }
 
 
