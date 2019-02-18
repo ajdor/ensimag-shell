@@ -318,14 +318,17 @@ int parse_jokers(struct cmdline *pCmdline){
         }
         // pCmdline->seq[i] = result.we_wordc;
         /* We need to copy the results into the command line */
-        char **p = malloc(sizeof(char *)*result.we_wordc);
-        for(int j = 0; j < result.we_wordc; j++){
+        char **p = malloc(sizeof(char *)*(result.we_wordc+1));
+        int j;
+        for(j = 0; j < result.we_wordc; j++){
             /* We need to allocate for the size of the word + 1 
             for the null terminating char */  
             char *word = malloc((strlen(result.we_wordv[j])+1)*(sizeof(char)));
             strncpy(word, result.we_wordv[j], strlen(result.we_wordv[j])+1);
             p[j] = word;
         }
+        /* We need to NULL terminate */
+        p[j] = NULL;
         pCmdline->seq[i] = p;
     }
     return 0;
