@@ -64,7 +64,7 @@ endif()
 # Debug build
 
 set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${GUILE_CFLAGS} -Wall -Werror -std=gnu99")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${GUILE_CFLAGS} -Wall -std=gnu99")
 
 #########
 # Gestion des variantes
@@ -73,7 +73,7 @@ set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${GUILE_CFLAGS} -Wall -Werror -s
 # et le numéro de la variante que vous avez choisi
 #########
 set(VARIANTE_LOGINS ajdoro kleinlou)
-set(VARIANTE_SUJET 0)
+set(VARIANTE_SUJET 4)
 ###
 list(SORT VARIANTE_LOGINS)
 if (VARIANTE_LOGINS MATCHES "login[123]")
