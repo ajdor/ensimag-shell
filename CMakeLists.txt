@@ -64,7 +64,7 @@ endif()
 # Debug build
 
 set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${GUILE_CFLAGS} -Wall -std=gnu99")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${GUILE_CFLAGS} -Wall -Werror -std=gnu99")
 
 #########
 # Gestion des variantes

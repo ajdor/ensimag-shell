@@ -20,6 +20,29 @@
 #error "Variante non défini !!"
 #endif
 
+typedef struct jobs {
+    pid_t pid;
+    char *cmd;
+    struct jobs *next;
+} jobs;
+
+/* Verbose mode is OFF by default */
+int verbose = 0;
+
+static jobs *background_jobs = NULL;
+
+int parse_jokers(struct cmdline *pCmdline);
+
+void exec_pipe(struct cmdline *pCmdline);
+
+void exec_stdin(struct cmdline *pCmdline);
+
+void exec_stdout(struct cmdline *pCmdline);
+
+void exec_commands(struct cmdline *pCmdline);
+
+void toggle_verbose();
+
 /* Guile (1.8 and 2.0) is auto-detected by cmake */
 /* To disable Scheme interpreter (Guile support), comment the
  * following lines.  You may also have to comment related pkg-config
@@ -59,28 +82,6 @@ void terminate(char *line) {
     printf("thanks for using ensishell :)\n");
     exit(0);
 }
-
-
-typedef struct jobs {
-    pid_t pid;
-    char *cmd;
-    struct jobs *next;
-} jobs;
-
-/* Verbose mode is OFF by default */
-int verbose = 0;
-
-static jobs *background_jobs = NULL;
-
-int parse_jokers(struct cmdline *pCmdline);
-
-void exec_pipe(struct cmdline *pCmdline);
-
-void exec_stdin(struct cmdline *pCmdline);
-
-void exec_stdout(struct cmdline *pCmdline);
-
-void toggle_verbose();
 
 void exec_background(pid_t pid, char *cmd) {
     int status;
@@ -287,10 +288,7 @@ void toggle_verbose() {
 }
 
 int parse_jokers(struct cmdline *pCmdline){
-/**
- * Modify in place the pCmdline with extended calls.
- * /
-
+/* Modify in place the pCmdline with extended calls. */
     /* Expand the all the command lines for the program to run.  */
     for(int i =0; pCmdline->seq[i] != NULL; i++){
         wordexp_t result;
